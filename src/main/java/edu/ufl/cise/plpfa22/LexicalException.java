@@ -18,7 +18,7 @@ public class LexicalException extends PLPException {
 	}
 
 	public LexicalException(String error_message, SourceLocation loc) {
-		super(loc.line()+ ":" + loc.column() + " " + error_message);
+		super(loc.line() + ":" + loc.column() + " " + error_message);
 	}
 
 	public LexicalException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
