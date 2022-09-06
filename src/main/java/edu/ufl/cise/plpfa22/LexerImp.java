@@ -63,7 +63,7 @@ public class LexerImp implements ILexer {
                         this.lineNum += 1;
                     }
                     case 0 -> {
-                        return new TokenImp(Kind.EOF, this.lineNum, this.colNum);
+                        return new TokenImp(Kind.EOF, this.lineNum, this.colNum,input);
                     }
                     //start of num_lit
                     // TODO: modify the float later!!
@@ -88,7 +88,7 @@ public class LexerImp implements ILexer {
 
                 // TODO: get the correct lineNum and colNum. lineNum and colNum is currently at
                 // the start of the next token.
-                return new TokenImp(Kind.PLUS, this.lineNum, this.colNum - 1);
+                return new TokenImp(Kind.PLUS, this.lineNum, this.colNum - 1,input);
 
             }
             case MINUS -> {
@@ -97,7 +97,7 @@ public class LexerImp implements ILexer {
 
                 // TODO: get the correct lineNum and colNum. lineNum and colNum is currently at
                 // the start of the next token.
-                return new TokenImp(Kind.MINUS, this.lineNum, this.colNum - 1);
+                return new TokenImp(Kind.MINUS, this.lineNum, this.colNum - 1,input);
             }
             case IN_NUM -> {
                 //keep reading the input till next char is not int
@@ -120,7 +120,6 @@ public class LexerImp implements ILexer {
             this.pos += 1;
             this.colNum += 1;
         }
-
     }
 
     /**
