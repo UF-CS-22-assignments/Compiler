@@ -5,9 +5,11 @@ public class TokenImp implements IToken {
 
     private SourceLocation location;
 
-    public TokenImp(Kind kind, int line, int col) {
+    private String text;
+    public TokenImp(Kind kind, int line, int col, String input){
         this.kind = kind;
         this.location = new SourceLocation(line, col);
+        this.text = input;
     }
 
     /**
@@ -33,7 +35,7 @@ public class TokenImp implements IToken {
     @Override
     public char[] getText() {
         // TODO
-        return null;
+        return text.toCharArray();
     }
 
     /**
@@ -55,7 +57,7 @@ public class TokenImp implements IToken {
     @Override
     public int getIntValue() {
         // TODO
-        return 0;
+        return Integer.parseInt(text);
     }
 
     /**
