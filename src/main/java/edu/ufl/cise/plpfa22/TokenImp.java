@@ -6,7 +6,8 @@ public class TokenImp implements IToken {
     private SourceLocation location;
 
     private String text;
-    public TokenImp(Kind kind, int line, int col, String input){
+
+    public TokenImp(Kind kind, int line, int col, String input) {
         this.kind = kind;
         this.location = new SourceLocation(line, col);
         this.text = input;
