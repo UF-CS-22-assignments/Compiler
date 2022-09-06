@@ -13,6 +13,7 @@ public class LexerImp implements ILexer {
 
     // the next character's position in input that will be sent to the DFA.
     private int pos = 0;
+    //record the start index for each token
     private int startIndex = 0;
     private enum State {
         START, // start state
@@ -33,7 +34,7 @@ public class LexerImp implements ILexer {
      */
     private IToken getNextToken() throws LexicalException {
         char ch;
-
+        this.startIndex = pos;
         while (true) {
             // get the next character and handle EOF, which is that we reached the end of
             // the input string.
@@ -56,6 +57,7 @@ public class LexerImp implements ILexer {
                         // skip white spaces
                     }
                     case '\n' -> {
+                        // TODO: Consider \r\n
                         // reset col to 0 and increase lineNum by 1
                         this.colNum = 0;
                         this.lineNum += 1;
@@ -72,7 +74,6 @@ public class LexerImp implements ILexer {
                     }
                     case '1','2','3','4','5','6','7','8','9' ->{
                         //keep track of the startIndex and make the substring later
-                        this.startIndex = pos;
                         this.currentState = State.IN_NUM;
                     }
                     default -> {
