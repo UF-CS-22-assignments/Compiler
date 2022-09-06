@@ -93,6 +93,34 @@ class LexerTest {
 		checkToken(lexer.next(), Kind.MINUS, 2, 1);
 		checkEOF(lexer.next());
 	}
+	@Test
+	void testSingleInt() throws LexicalException {
+		String input = "1";
+		show(input);
+		ILexer lexer = getLexer(input);
+		checkInt(lexer.next(),1);
+		checkEOF(lexer.next());
+	}
+	@Test
+	void testSingleLineInt() throws LexicalException {
+		String input = "1023456789";
+		show(input);
+		ILexer lexer = getLexer(input);
+		checkInt(lexer.next(),1023456789);
+		checkEOF(lexer.next());
+	}
+	@Test
+	void testNewLineInt() throws LexicalException {
+		String input = """
+				1
+				0
+				""";
+		show(input);
+		ILexer lexer = getLexer(input);
+		checkInt(lexer.next(),1);
+		checkInt(lexer.next(),0);
+		checkEOF(lexer.next());
+	}
 
 	// comments should be skipped
 	@Test
