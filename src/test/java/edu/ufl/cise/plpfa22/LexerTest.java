@@ -26,7 +26,15 @@ class LexerTest {
 			System.out.println(obj);
 		}
 	}
+	// check that this token has the expected text.
+	void checkText(IToken t, String expectedText) {
+		assertArrayEquals(expectedText.toCharArray(), t.getText());
+	}
 
+	// check that this token has the expected location.
+	void checkLocation(IToken t, int expectedLine, int expectedColumn) {
+		assertEquals(new IToken.SourceLocation(expectedLine, expectedColumn), t.getSourceLocation());
+	}
 	// check that this token has the expected kind
 	void checkToken(IToken t, Kind expectedKind) {
 		assertEquals(expectedKind, t.getKind());
@@ -48,6 +56,19 @@ class LexerTest {
 	// expected position
 	void checkIdent(IToken t, String expectedName, int expectedLine, int expectedColumn) {
 		checkIdent(t, expectedName);
+		this.checkLocation(t, expectedLine, expectedColumn);
+	}
+
+	// check that this token is a boolean_lit, has the expected name and position
+	void checkBoolean(IToken t, boolean expectedBooleanValue, int expectedLine, int expectedColumn) {
+		assertEquals(Kind.BOOLEAN_LIT, t.getKind());
+		if (expectedBooleanValue) {
+			this.checkText(t, "TRUE");
+		} else {
+			this.checkText(t, "FALSE");
+		}
+		assertEquals(expectedBooleanValue, t.getBooleanValue());
+		this.checkLocation(t, expectedLine, expectedColumn);
 		assertEquals(new IToken.SourceLocation(expectedLine, expectedColumn), t.getSourceLocation());
 	}
 
@@ -195,7 +216,27 @@ class LexerTest {
 		checkReserved(lexer.next(),"TRUE",Kind.BOOLEAN_LIT,1,4);
 		checkEOF(lexer.next());
 	}
-
+	public void testReservedWords() throws LexicalException {
+		String input = """
+				TRUE CONST
+				PROCEDURE
+				DO    CALL
+				FALSE
+				a123 456b
+				""";
+		show(input);
+		ILexer lexer = getLexer(input);
+		checkBoolean(lexer.next(), true, 1, 1);
+		checkToken(lexer.next(), Kind.KW_CONST, 1, 6);
+		checkToken(lexer.next(), Kind.KW_PROCEDURE, 2, 1);
+		checkToken(lexer.next(), Kind.KW_DO, 3, 1);
+		checkToken(lexer.next(), Kind.KW_CALL, 3, 7);
+		checkBoolean(lexer.next(), false, 4, 1);
+		checkIdent(lexer.next(), "a123", 1, 1);
+		checkInt(lexer.next(), 456, 1, 6);
+		checkIdent(lexer.next(), "b", 1, 9);
+		checkEOF(lexer.next());
+	}
 	@Test
 	public void testIdenInt() throws LexicalException {
 		String input = """
@@ -221,6 +262,7 @@ class LexerTest {
 			lexer.next();
 		});
 	}
+
 
 	@Test
 	public void testEscapeSequences0() throws LexicalException {
