@@ -68,7 +68,7 @@ public class TokenImp implements IToken {
      */
     @Override
     public boolean getBooleanValue() {
-        if (this.kind != Kind.BOOLEAN_LIT){
+        if (this.kind != Kind.BOOLEAN_LIT) {
             // TODO: raise a custom exception.
         }
         return this.text.equals("TRUE");
