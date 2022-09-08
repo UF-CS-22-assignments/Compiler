@@ -27,6 +27,16 @@ class LexerTest {
 		}
 	}
 
+	// check that this token has the expected text.
+	void checkText(IToken t, String expectedText) {
+		assertArrayEquals(expectedText.toCharArray(), t.getText());
+	}
+
+	// check that this token has the expected location.
+	void checkLocation(IToken t, int expectedLine, int expectedColumn){
+		assertEquals(new IToken.SourceLocation(expectedLine, expectedColumn), t.getSourceLocation());
+	}
+
 	// check that this token has the expected kind
 	void checkToken(IToken t, Kind expectedKind) {
 		assertEquals(expectedKind, t.getKind());
@@ -35,7 +45,7 @@ class LexerTest {
 	// check that the token has the expected kind and position
 	void checkToken(IToken t, Kind expectedKind, int expectedLine, int expectedColumn) {
 		assertEquals(expectedKind, t.getKind());
-		assertEquals(new IToken.SourceLocation(expectedLine, expectedColumn), t.getSourceLocation());
+		this.checkLocation(t, expectedLine, expectedColumn);
 	}
 
 	// check that this token is an IDENT and has the expected name
@@ -48,7 +58,20 @@ class LexerTest {
 	// expected position
 	void checkIdent(IToken t, String expectedName, int expectedLine, int expectedColumn) {
 		checkIdent(t, expectedName);
-		assertEquals(new IToken.SourceLocation(expectedLine, expectedColumn), t.getSourceLocation());
+		this.checkLocation(t, expectedLine, expectedColumn);
+	}
+
+
+	// check that this token is a boolean_lit, has the expected name and position
+	void checkBoolean(IToken t, boolean expectedBooleanValue, int expectedLine, int expectedColumn) {
+		assertEquals(Kind.BOOLEAN_LIT, t.getKind());
+		if (expectedBooleanValue) {
+			this.checkText(t, "TRUE");
+		} else {
+			this.checkText(t, "FALSE");
+		}
+		assertEquals(expectedBooleanValue, t.getBooleanValue());
+		this.checkLocation(t, expectedLine, expectedColumn);
 	}
 
 	// check that this token is an NUM_LIT with expected int value
@@ -60,7 +83,7 @@ class LexerTest {
 	// check that this token is an NUM_LIT with expected int value and position
 	void checkInt(IToken t, int expectedValue, int expectedLine, int expectedColumn) {
 		checkInt(t, expectedValue);
-		assertEquals(new IToken.SourceLocation(expectedLine, expectedColumn), t.getSourceLocation());
+		this.checkLocation(t, expectedLine, expectedColumn);
 	}
 
 	// check that this token is the EOF token
@@ -187,6 +210,25 @@ class LexerTest {
 		checkIdent(lexer.next(), "a123", 1, 1);
 		checkInt(lexer.next(), 456, 1, 6);
 		checkIdent(lexer.next(), "b", 1, 9);
+		checkEOF(lexer.next());
+	}
+
+	@Test
+	public void testReservedWords() throws LexicalException {
+		String input = """
+				TRUE CONST
+				PROCEDURE
+				DO    CALL
+				FALSE
+				""";
+		show(input);
+		ILexer lexer = getLexer(input);
+		checkBoolean(lexer.next(), true, 1, 1);
+		checkToken(lexer.next(), Kind.KW_CONST, 1, 6);
+		checkToken(lexer.next(), Kind.KW_PROCEDURE, 2, 1);
+		checkToken(lexer.next(), Kind.KW_DO, 3, 1);
+		checkToken(lexer.next(), Kind.KW_CALL, 3, 7);
+		checkBoolean(lexer.next(), false, 4, 1);
 		checkEOF(lexer.next());
 	}
 
