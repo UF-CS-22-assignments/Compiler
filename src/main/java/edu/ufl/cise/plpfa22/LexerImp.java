@@ -128,9 +128,21 @@ public class LexerImp implements ILexer {
                         // state not changed
                     }
                     default -> {
-                        // TODO: check reserved words.
+                        // Either it's an identifier, or it's a reserved word. The curState will always switch to START.
                         this.currentState = State.START;
-                        return new TokenImp(Kind.IDENT, startLineNum, startColNum, this.input.substring(startIndex, this.pos));
+
+                        //the text of the token, used to check if it's a reserved word and construct the Token instance.
+                        String curTokenText = this.input.substring(startIndex, this.pos);
+                        
+                        //check if it's a reserved word or an identifier
+                        if (this.reservedWords.containsKey(curTokenText)) {
+                            // it's a reserved word.
+                            return new TokenImp(this.reservedWords.get(curTokenText), startLineNum, startColNum, curTokenText);
+                        } else {
+                            // it's an identifier.
+                            return new TokenImp(Kind.IDENT, startLineNum, startColNum, curTokenText);
+                        }
+
                     }
                 }
             }
