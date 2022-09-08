@@ -33,7 +33,7 @@ class LexerTest {
 	}
 
 	// check that this token has the expected location.
-	void checkLocation(IToken t, int expectedLine, int expectedColumn){
+	void checkLocation(IToken t, int expectedLine, int expectedColumn) {
 		assertEquals(new IToken.SourceLocation(expectedLine, expectedColumn), t.getSourceLocation());
 	}
 
@@ -60,7 +60,6 @@ class LexerTest {
 		checkIdent(t, expectedName);
 		this.checkLocation(t, expectedLine, expectedColumn);
 	}
-
 
 	// check that this token is a boolean_lit, has the expected name and position
 	void checkBoolean(IToken t, boolean expectedBooleanValue, int expectedLine, int expectedColumn) {
