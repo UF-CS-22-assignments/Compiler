@@ -62,6 +62,14 @@ class LexerTest {
 		checkInt(t, expectedValue);
 		assertEquals(new IToken.SourceLocation(expectedLine, expectedColumn), t.getSourceLocation());
 	}
+	void checkReserved(IToken t,String expectedName, Kind kind) {
+		assertEquals(kind, t.getKind());
+		assertEquals(expectedName, String.valueOf(t.getText()));
+	}
+	void checkReserved(IToken t,String expectedName, Kind kind,int expectedLine, int expectedColumn) {
+		checkReserved(t,expectedName,kind);
+		assertEquals(new IToken.SourceLocation(expectedLine, expectedColumn), t.getSourceLocation());
+	}
 
 	// check that this token is the EOF token
 	void checkEOF(IToken t) {
@@ -176,6 +184,17 @@ class LexerTest {
 		checkIdent(lexer.next(), "ghi", 3, 6);
 		checkEOF(lexer.next());
 	}
+	@Test
+	public void testIdenReserved() throws LexicalException {
+		String input = """
+				AbcTRUE
+				""";
+		show(input);
+		ILexer lexer = getLexer(input);
+		checkIdent(lexer.next(), "Abc", 1, 1);
+		checkReserved(lexer.next(),"TRUE",Kind.BOOLEAN_LIT,1,4);
+		checkEOF(lexer.next());
+	}
 
 	@Test
 	public void testIdenInt() throws LexicalException {
@@ -188,16 +207,6 @@ class LexerTest {
 		checkInt(lexer.next(), 456, 1, 6);
 		checkIdent(lexer.next(), "b", 1, 9);
 		checkEOF(lexer.next());
-	}
-	@Test
-	public void SimpletestIntTooBig() throws LexicalException {
-		String input = """
-				99999999999999999999999999999999999999999999999999999999999999999999999
-				""";
-		ILexer lexer = getLexer(input);
-		Exception e = assertThrows(LexicalException.class, () -> {
-			lexer.next();
-		});
 	}
 	// Example showing how to handle number that are too big.
 	@Test

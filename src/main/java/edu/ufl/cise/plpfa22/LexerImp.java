@@ -40,7 +40,7 @@ public class LexerImp implements ILexer {
         START, // start state
         PLUS, // +
         MINUS, // -
-        IN_NUM, // ,
+        IN_NUM, // num
         IDENT // identifier
     }
 
@@ -110,7 +110,6 @@ public class LexerImp implements ILexer {
                             return new TokenImp(Kind.EOF, this.lineNum, this.colNum, input);
                         }
                         // start of num_lit
-                        // TODO: modify the float later!!
                         case '0' -> {
                             // TODO: if not dot, return zero
                             pos += 1;
