@@ -40,13 +40,15 @@ public class LexerImp implements ILexer {
         START, // start state
         PLUS, // +
         MINUS, // -
-        IN_NUM // ,
+        IN_NUM, // ,
+        IDENT // identifier
     }
 
     private State currentState = State.START;
 
     /**
-     * read the next character, change the state, lineNum, ColNum, and pos accordingly.
+     * read the next character, change the state, lineNum, ColNum, and pos
+     * accordingly.
      * 
      * @return the next token.
      * 
@@ -54,7 +56,11 @@ public class LexerImp implements ILexer {
      */
     private IToken getNextToken() throws LexicalException {
         char ch;
+
+        // start index, line, and col number of the next token.
         this.startIndex = pos;
+        int startLineNum = this.lineNum;
+        int startColNum = this.colNum;
         while (true) {
             // get the next character and handle EOF, which is that we reached the end of
             // the input string.
@@ -75,12 +81,24 @@ public class LexerImp implements ILexer {
                 }
                 case ' ' -> {
                     // skip white spaces
+
+                    // since white spaces is not part of the token and is omitted, the start index and col number need to be updated (line number doesn't change).
+                    this.startIndex = pos + 1; // add 1 because pos and colNum will add 1 that each loop.
+                    startColNum = this.colNum + 1;
                 }
                 case '\n' -> {
                     // TODO: Consider \r\n
                     // reset col to 0 and increase lineNum by 1
                     this.colNum = 0;
                     this.lineNum += 1;
+
+                    // since whitespaces is not part of the token and is omitted, the start index, start line and col number need to be updated.
+                    this.startIndex = pos + 1; // add 1 because pos and colNum will add 1 that each loop.
+                    startColNum = this.colNum + 1;
+                    startLineNum = this.lineNum;
+                }
+                case 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '_', '$'->{
+                    this.currentState = State.IDENT;
                 }
                 case 0 -> {
                     // TODO: input is wrong(the third argument).
@@ -102,6 +120,18 @@ public class LexerImp implements ILexer {
                     // Illegal character
                     throw new LexicalException("Illegal character at start state", this.lineNum, this.colNum);
                 }
+                }
+            }
+            case IDENT -> {
+                switch (ch) {
+                    case 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '_', '$', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> {
+                        // state not changed
+                    }
+                    default -> {
+                        // TODO: check reserved words.
+                        this.currentState = State.START;
+                        return new TokenImp(Kind.IDENT, startLineNum, startColNum, this.input.substring(startIndex, this.pos));
+                    }
                 }
             }
             case PLUS -> {
@@ -130,7 +160,7 @@ public class LexerImp implements ILexer {
                 default -> {
                     // return the NUM_LIT token
                     this.currentState = State.START;
-                    return new TokenImp(Kind.NUM_LIT, this.lineNum, this.colNum - 1, input.substring(startIndex, pos));
+                    return new TokenImp(Kind.NUM_LIT, startLineNum, startColNum, input.substring(startIndex, this.pos));
                 }
                 }
             }
