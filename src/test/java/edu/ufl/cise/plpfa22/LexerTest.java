@@ -189,7 +189,16 @@ class LexerTest {
 		checkIdent(lexer.next(), "b", 1, 9);
 		checkEOF(lexer.next());
 	}
-
+	@Test
+	public void SimpletestIntTooBig() throws LexicalException {
+		String input = """
+				99999999999999999999999999999999999999999999999999999999999999999999999
+				""";
+		ILexer lexer = getLexer(input);
+		Exception e = assertThrows(LexicalException.class, () -> {
+			lexer.next();
+		});
+	}
 	// Example showing how to handle number that are too big.
 	@Test
 	public void testIntTooBig() throws LexicalException {
