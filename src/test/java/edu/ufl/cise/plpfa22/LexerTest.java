@@ -119,8 +119,8 @@ class LexerTest {
 		show(input);
 		ILexer lexer = getLexer(input);
 		// TODO: test the text of the token
-		checkToken(lexer.next(), Kind.PLUS, 1, 1);
-		checkToken(lexer.next(), Kind.MINUS, 2, 1);
+		checkToken(lexer.next(), Kind.PLUS, 1, 1, "+");
+		checkToken(lexer.next(), Kind.MINUS, 2, 1, "-");
 		checkEOF(lexer.next());
 	}
 
@@ -133,7 +133,6 @@ class LexerTest {
 				""";
 		show(input);
 		ILexer lexer = getLexer(input);
-		// TODO: test the text of the token
 		checkToken(lexer.next(), Kind.PLUS, 1, 1, "+");
 		checkToken(lexer.next(), Kind.MINUS, 1, 2, "-");
 		checkToken(lexer.next(), Kind.TIMES, 1, 4, "*");
@@ -266,15 +265,13 @@ class LexerTest {
 	}
 
 	@Test
-	public void testIdenInt() throws LexicalException {
+	public void testIdenAndReserved() throws LexicalException {
 		String input = """
-				a123 456b
+				AbcTRUE
 				""";
 		show(input);
 		ILexer lexer = getLexer(input);
-		checkIdent(lexer.next(), "a123", 1, 1);
-		checkInt(lexer.next(), 456, 1, 6);
-		checkIdent(lexer.next(), "b", 1, 9);
+		checkIdent(lexer.next(), "AbcTRUE", 1, 1);
 		checkEOF(lexer.next());
 	}
 
@@ -285,6 +282,7 @@ class LexerTest {
 				PROCEDURE
 				DO    CALL
 				FALSE
+				a123 456b
 				""";
 		show(input);
 		ILexer lexer = getLexer(input);
@@ -294,6 +292,22 @@ class LexerTest {
 		checkToken(lexer.next(), Kind.KW_DO, 3, 1);
 		checkToken(lexer.next(), Kind.KW_CALL, 3, 7);
 		checkBoolean(lexer.next(), false, 4, 1);
+		checkIdent(lexer.next(), "a123", 5, 1);
+		checkInt(lexer.next(), 456, 5, 6);
+		checkIdent(lexer.next(), "b", 5, 9);
+		checkEOF(lexer.next());
+	}
+
+	@Test
+	public void testIdenInt() throws LexicalException {
+		String input = """
+				a123 456b
+				""";
+		show(input);
+		ILexer lexer = getLexer(input);
+		checkIdent(lexer.next(), "a123", 1, 1);
+		checkInt(lexer.next(), 456, 1, 6);
+		checkIdent(lexer.next(), "b", 1, 9);
 		checkEOF(lexer.next());
 	}
 

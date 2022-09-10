@@ -18,10 +18,19 @@ public class TokenImp implements IToken {
      * @param text the string that contains the raw text of the token in the input
      *             string.
      */
-    public TokenImp(Kind kind, int line, int col, String text) {
+    private int num;
+
+    public TokenImp(Kind kind, int line, int col, String text) throws LexicalException {
         this.kind = kind;
         this.location = new SourceLocation(line, col);
         this.text = text;
+        if (kind == Kind.NUM_LIT) {
+            try {
+                num = Integer.parseInt(text);
+            } catch (NumberFormatException nfe) {
+                throw new LexicalException(nfe);
+            }
+        }
     }
 
     /**
@@ -70,7 +79,7 @@ public class TokenImp implements IToken {
     @Override
     public int getIntValue() {
         // TODO
-        return Integer.parseInt(text);
+        return num;
     }
 
     /**
