@@ -6,6 +6,8 @@ package edu.ufl.cise.plpfa22;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 import edu.ufl.cise.plpfa22.IToken.Kind;
@@ -46,6 +48,13 @@ class LexerTest {
 	void checkToken(IToken t, Kind expectedKind, int expectedLine, int expectedColumn) {
 		assertEquals(expectedKind, t.getKind());
 		this.checkLocation(t, expectedLine, expectedColumn);
+	}
+
+	// check if the token has the expected kind, location, and text.
+	void checkToken(IToken t, Kind expectedKind, int expectedLine, int expectedColumn, String expectedText) {
+		assertEquals(expectedKind, t.getKind());
+		this.checkLocation(t, expectedLine, expectedColumn);
+		assertArrayEquals(expectedText.toCharArray(), t.getText());
 	}
 
 	// check that this token is an IDENT and has the expected name
@@ -111,8 +120,67 @@ class LexerTest {
 				""";
 		show(input);
 		ILexer lexer = getLexer(input);
+		// TODO: test the text of the token
 		checkToken(lexer.next(), Kind.PLUS, 1, 1);
 		checkToken(lexer.next(), Kind.MINUS, 2, 1);
+		checkEOF(lexer.next());
+	}
+
+	@Test
+	void testSingleChar1() throws LexicalException {
+		String input = """
+				+- *
+				;;;
+				(() )  #//
+				""";
+		show(input);
+		ILexer lexer = getLexer(input);
+		// TODO: test the text of the token
+		checkToken(lexer.next(), Kind.PLUS, 1, 1, "+");
+		checkToken(lexer.next(), Kind.MINUS, 1, 2, "-");
+		checkToken(lexer.next(), Kind.TIMES, 1, 4, "*");
+		checkToken(lexer.next(), Kind.SEMI, 2, 1, ";");
+		checkToken(lexer.next(), Kind.SEMI, 2, 2, ";");
+		checkToken(lexer.next(), Kind.SEMI, 2, 3, ";");
+		checkToken(lexer.next(), Kind.LPAREN, 3, 1, "(");
+		checkToken(lexer.next(), Kind.LPAREN, 3, 2, "(");
+		checkToken(lexer.next(), Kind.RPAREN, 3, 3, ")");
+		checkToken(lexer.next(), Kind.RPAREN, 3, 5, ")");
+		checkToken(lexer.next(), Kind.NEQ, 3, 8, "#");
+		checkToken(lexer.next(), Kind.DIV, 3, 9, "/");
+		checkToken(lexer.next(), Kind.DIV, 3, 10, "/");
+
+		checkEOF(lexer.next());
+	}
+
+	@Test
+	void testSingleChar2() throws LexicalException {
+		String input = """
+				.,;()+-*/%?!:==#<<=>>=
+				""";
+		show(input);
+		ILexer lexer = getLexer(input);
+		// TODO: test the text of the token
+		checkToken(lexer.next(), Kind.DOT, 1, 1, ".");
+		checkToken(lexer.next(), Kind.COMMA, 1, 2, ",");
+		checkToken(lexer.next(), Kind.SEMI, 1, 3, ";");
+		checkToken(lexer.next(), Kind.LPAREN, 1, 4, "(");
+		checkToken(lexer.next(), Kind.RPAREN, 1, 5, ")");
+		checkToken(lexer.next(), Kind.PLUS, 1, 6, "+");
+		checkToken(lexer.next(), Kind.MINUS, 1, 7, "-");
+		checkToken(lexer.next(), Kind.TIMES, 1, 8, "*");
+		checkToken(lexer.next(), Kind.DIV, 1, 9, "/");
+		checkToken(lexer.next(), Kind.MOD, 1, 10, "%");
+		checkToken(lexer.next(), Kind.QUESTION, 1, 11, "?");
+		checkToken(lexer.next(), Kind.BANG, 1, 12, "!");
+		checkToken(lexer.next(), Kind.ASSIGN, 1, 13, ":=");
+		checkToken(lexer.next(), Kind.EQ, 1, 15, "=");
+		checkToken(lexer.next(), Kind.NEQ, 1, 16, "#");
+		checkToken(lexer.next(), Kind.LT, 1, 17, "<");
+		checkToken(lexer.next(), Kind.LE, 1, 18, "<=");
+		checkToken(lexer.next(), Kind.GT, 1, 20, ">");
+		checkToken(lexer.next(), Kind.GE, 1, 21, ">=");
+
 		checkEOF(lexer.next());
 	}
 
