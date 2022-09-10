@@ -43,7 +43,7 @@ class LexerTest {
 	// check that the token has the expected kind and position
 	void checkToken(IToken t, Kind expectedKind, int expectedLine, int expectedColumn) {
 		assertEquals(expectedKind, t.getKind());
-		assertEquals(new IToken.SourceLocation(expectedLine, expectedColumn), t.getSourceLocation());
+		this.checkLocation(t, expectedLine, expectedColumn);
 	}
 
 	// check that this token is an IDENT and has the expected name
@@ -81,14 +81,6 @@ class LexerTest {
 	// check that this token is an NUM_LIT with expected int value and position
 	void checkInt(IToken t, int expectedValue, int expectedLine, int expectedColumn) {
 		checkInt(t, expectedValue);
-		assertEquals(new IToken.SourceLocation(expectedLine, expectedColumn), t.getSourceLocation());
-	}
-	void checkReserved(IToken t,String expectedName, Kind kind) {
-		assertEquals(kind, t.getKind());
-		assertEquals(expectedName, String.valueOf(t.getText()));
-	}
-	void checkReserved(IToken t,String expectedName, Kind kind,int expectedLine, int expectedColumn) {
-		checkReserved(t,expectedName,kind);
 		assertEquals(new IToken.SourceLocation(expectedLine, expectedColumn), t.getSourceLocation());
 	}
 
@@ -212,8 +204,7 @@ class LexerTest {
 				""";
 		show(input);
 		ILexer lexer = getLexer(input);
-		checkIdent(lexer.next(), "Abc", 1, 1);
-		checkReserved(lexer.next(),"TRUE",Kind.BOOLEAN_LIT,1,4);
+		checkIdent(lexer.next(), "AbcTRUE", 1, 1);
 		checkEOF(lexer.next());
 	}
 	public void testReservedWords() throws LexicalException {
