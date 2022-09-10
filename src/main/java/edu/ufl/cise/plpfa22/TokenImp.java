@@ -7,10 +7,19 @@ public class TokenImp implements IToken {
 
     private String text;
 
-    public TokenImp(Kind kind, int line, int col, String input) {
+    private int num;
+
+    public TokenImp(Kind kind, int line, int col, String input) throws LexicalException {
         this.kind = kind;
         this.location = new SourceLocation(line, col);
         this.text = input;
+        if(kind == Kind.NUM_LIT){
+            try{
+                num =Integer.parseInt(input);
+            }catch(NumberFormatException nfe){
+                throw new LexicalException(nfe);
+            }
+        }
     }
 
     /**
@@ -56,9 +65,9 @@ public class TokenImp implements IToken {
      * @returns int value represented by the characters in this IToken
      */
     @Override
-    public int getIntValue() {
+    public int getIntValue(){
         // TODO
-        return Integer.parseInt(text);
+        return num;
     }
 
     /**

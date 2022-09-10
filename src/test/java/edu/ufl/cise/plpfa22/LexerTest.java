@@ -26,7 +26,6 @@ class LexerTest {
 			System.out.println(obj);
 		}
 	}
-
 	// check that this token has the expected text.
 	void checkText(IToken t, String expectedText) {
 		assertArrayEquals(expectedText.toCharArray(), t.getText());
@@ -36,7 +35,6 @@ class LexerTest {
 	void checkLocation(IToken t, int expectedLine, int expectedColumn) {
 		assertEquals(new IToken.SourceLocation(expectedLine, expectedColumn), t.getSourceLocation());
 	}
-
 	// check that this token has the expected kind
 	void checkToken(IToken t, Kind expectedKind) {
 		assertEquals(expectedKind, t.getKind());
@@ -198,7 +196,38 @@ class LexerTest {
 		checkIdent(lexer.next(), "ghi", 3, 6);
 		checkEOF(lexer.next());
 	}
-
+	@Test
+	public void testIdenAndReserved() throws LexicalException {
+		String input = """
+				AbcTRUE
+				""";
+		show(input);
+		ILexer lexer = getLexer(input);
+		checkIdent(lexer.next(), "AbcTRUE", 1, 1);
+		checkEOF(lexer.next());
+	}
+	@Test
+	public void testReservedWords() throws LexicalException {
+		String input = """
+				TRUE CONST
+				PROCEDURE
+				DO    CALL
+				FALSE
+				a123 456b
+				""";
+		show(input);
+		ILexer lexer = getLexer(input);
+		checkBoolean(lexer.next(), true, 1, 1);
+		checkToken(lexer.next(), Kind.KW_CONST, 1, 6);
+		checkToken(lexer.next(), Kind.KW_PROCEDURE, 2, 1);
+		checkToken(lexer.next(), Kind.KW_DO, 3, 1);
+		checkToken(lexer.next(), Kind.KW_CALL, 3, 7);
+		checkBoolean(lexer.next(), false, 4, 1);
+		checkIdent(lexer.next(), "a123", 1, 1);
+		checkInt(lexer.next(), 456, 1, 6);
+		checkIdent(lexer.next(), "b", 1, 9);
+		checkEOF(lexer.next());
+	}
 	@Test
 	public void testIdenInt() throws LexicalException {
 		String input = """
@@ -211,26 +240,6 @@ class LexerTest {
 		checkIdent(lexer.next(), "b", 1, 9);
 		checkEOF(lexer.next());
 	}
-
-	@Test
-	public void testReservedWords() throws LexicalException {
-		String input = """
-				TRUE CONST
-				PROCEDURE
-				DO    CALL
-				FALSE
-				""";
-		show(input);
-		ILexer lexer = getLexer(input);
-		checkBoolean(lexer.next(), true, 1, 1);
-		checkToken(lexer.next(), Kind.KW_CONST, 1, 6);
-		checkToken(lexer.next(), Kind.KW_PROCEDURE, 2, 1);
-		checkToken(lexer.next(), Kind.KW_DO, 3, 1);
-		checkToken(lexer.next(), Kind.KW_CALL, 3, 7);
-		checkBoolean(lexer.next(), false, 4, 1);
-		checkEOF(lexer.next());
-	}
-
 	// Example showing how to handle number that are too big.
 	@Test
 	public void testIntTooBig() throws LexicalException {
@@ -244,6 +253,7 @@ class LexerTest {
 			lexer.next();
 		});
 	}
+
 
 	@Test
 	public void testEscapeSequences0() throws LexicalException {
