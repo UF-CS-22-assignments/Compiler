@@ -69,7 +69,6 @@ class LexerTest {
 		}
 		assertEquals(expectedBooleanValue, t.getBooleanValue());
 		this.checkLocation(t, expectedLine, expectedColumn);
-		assertEquals(new IToken.SourceLocation(expectedLine, expectedColumn), t.getSourceLocation());
 	}
 
 	// check that this token is an NUM_LIT with expected int value
@@ -81,7 +80,7 @@ class LexerTest {
 	// check that this token is an NUM_LIT with expected int value and position
 	void checkInt(IToken t, int expectedValue, int expectedLine, int expectedColumn) {
 		checkInt(t, expectedValue);
-		assertEquals(new IToken.SourceLocation(expectedLine, expectedColumn), t.getSourceLocation());
+		this.checkLocation(t, expectedLine, expectedColumn);
 	}
 
 	// check that this token is the EOF token
@@ -198,7 +197,7 @@ class LexerTest {
 		checkEOF(lexer.next());
 	}
 	@Test
-	public void testIdenReserved() throws LexicalException {
+	public void testIdenAndReserved() throws LexicalException {
 		String input = """
 				AbcTRUE
 				""";
@@ -207,6 +206,7 @@ class LexerTest {
 		checkIdent(lexer.next(), "AbcTRUE", 1, 1);
 		checkEOF(lexer.next());
 	}
+	@Test
 	public void testReservedWords() throws LexicalException {
 		String input = """
 				TRUE CONST
