@@ -7,16 +7,27 @@ public class TokenImp implements IToken {
 
     private String text;
 
+    /**
+     * construct a token
+     * 
+     * @param kind The type of the token. Kind is an enum defind in IToken
+     * @param line the line number of the first character in the input character
+     *             stream.
+     * @param col  the col number of the first character in the in put character
+     *             stream
+     * @param text the string that contains the raw text of the token in the input
+     *             string.
+     */
     private int num;
 
-    public TokenImp(Kind kind, int line, int col, String input) throws LexicalException {
+    public TokenImp(Kind kind, int line, int col, String text) throws LexicalException {
         this.kind = kind;
         this.location = new SourceLocation(line, col);
-        this.text = input;
-        if(kind == Kind.NUM_LIT){
-            try{
-                num =Integer.parseInt(input);
-            }catch(NumberFormatException nfe){
+        this.text = text;
+        if (kind == Kind.NUM_LIT) {
+            try {
+                num = Integer.parseInt(text);
+            } catch (NumberFormatException nfe) {
                 throw new LexicalException(nfe);
             }
         }
@@ -45,6 +56,7 @@ public class TokenImp implements IToken {
     @Override
     public char[] getText() {
         // TODO
+        // TODO: make sure for string)lit, it returns the raw characters.
         return text.toCharArray();
     }
 
@@ -65,7 +77,7 @@ public class TokenImp implements IToken {
      * @returns int value represented by the characters in this IToken
      */
     @Override
-    public int getIntValue(){
+    public int getIntValue() {
         // TODO
         return num;
     }

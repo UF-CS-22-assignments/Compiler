@@ -38,10 +38,30 @@ public class LexerImp implements ILexer {
 
     private enum State {
         START, // start state
+        IN_NUM, // ,
+        IDENT, // identifier
+        DOT, // .
+        COMMA, // ,
+        SEMI, // ;
+        QUOTE, // " (not a singel character token)
+        LPAREN, // (
+        RPAREN, // )
         PLUS, // +
         MINUS, // -
-        IN_NUM, // num
-        IDENT // identifier
+        TIMES, // *
+        DIV, // /
+        MOD, // %
+        QUESTION, // ?
+        BANG, // !
+        ASSIGN1, // first character of :=
+        ASSIGN2, // second character of :=
+        EQ, // =
+        NEQ, // #
+        LT, // <
+        LE, // <= (after LT)
+        GT, // >
+        GE, // >= (after GT)
+
     }
 
     private State currentState = State.START;
@@ -73,11 +93,56 @@ public class LexerImp implements ILexer {
             switch (this.currentState) {
                 case START -> {
                     switch (ch) {
+                        case '.' -> {
+                            this.currentState = State.DOT;
+                        }
+                        case ',' -> {
+                            this.currentState = State.COMMA;
+                        }
+                        case ';' -> {
+                            this.currentState = State.SEMI;
+                        }
+                        case '(' -> {
+                            this.currentState = State.LPAREN;
+                        }
+                        case ')' -> {
+                            this.currentState = State.RPAREN;
+                        }
                         case '+' -> {
                             this.currentState = State.PLUS;
                         }
                         case '-' -> {
                             this.currentState = State.MINUS;
+                        }
+                        case '*' -> {
+                            this.currentState = State.TIMES;
+                        }
+                        case '/' -> {
+                            this.currentState = State.DIV;
+                        }
+                        case '%' -> {
+                            this.currentState = State.MOD;
+                        }
+                        case '?' -> {
+                            this.currentState = State.QUESTION;
+                        }
+                        case '!' -> {
+                            this.currentState = State.BANG;
+                        }
+                        case ':' -> {
+                            this.currentState = State.ASSIGN1;
+                        }
+                        case '=' -> {
+                            this.currentState = State.EQ;
+                        }
+                        case '#' -> {
+                            this.currentState = State.NEQ;
+                        }
+                        case '<' -> {
+                            this.currentState = State.LT;
+                        }
+                        case '>' -> {
+                            this.currentState = State.GT;
                         }
                         case ' ' -> {
                             // skip white spaces
@@ -156,23 +221,121 @@ public class LexerImp implements ILexer {
                         }
                     }
                 }
+                case DOT -> {
+                    this.currentState = State.START; // TODO: Maybe this should be refactored to be executed every time
+                                                     // before this method returns.
+                    return new TokenImp(Kind.DOT, startLineNum, startColNum, ".");
+                }
+                case COMMA -> {
+                    this.currentState = State.START;
+                    return new TokenImp(Kind.COMMA, startLineNum, startColNum, ",");
+                }
+                case SEMI -> {
+                    this.currentState = State.START;
+                    return new TokenImp(Kind.SEMI, startLineNum, startColNum, ";");
+                }
+                case LPAREN -> {
+                    this.currentState = State.START;
+                    return new TokenImp(Kind.LPAREN, startLineNum, startColNum, "(");
+                }
+                case RPAREN -> {
+                    this.currentState = State.START;
+                    return new TokenImp(Kind.RPAREN, startLineNum, startColNum, ")");
+                }
+
                 case PLUS -> {
                     // return token of PLUS no matter what the next character is.
                     this.currentState = State.START;
 
-                    // TODO: get the correct lineNum and colNum. lineNum and colNum is currently at
                     // the start of the next token.
-                    return new TokenImp(Kind.PLUS, this.lineNum, this.colNum - 1, input);
+                    return new TokenImp(Kind.PLUS, startLineNum, startColNum, "+");
 
                 }
                 case MINUS -> {
                     // return token of MINUS no matter what the next character is.
                     this.currentState = State.START;
 
-                    // TODO: get the correct lineNum and colNum. lineNum and colNum is currently at
                     // the start of the next token.
-                    return new TokenImp(Kind.MINUS, this.lineNum, this.colNum - 1, input);
+                    return new TokenImp(Kind.MINUS, startLineNum, startColNum, "-");
                 }
+                case TIMES -> {
+                    this.currentState = State.START;
+                    return new TokenImp(Kind.TIMES, startLineNum, startColNum, "*");
+                }
+                case DIV -> {
+                    // TODO: this need to be changed when implementing the comment part.
+                    this.currentState = State.START;
+                    return new TokenImp(Kind.DIV, startLineNum, startColNum, "/");
+                }
+                case MOD -> {
+                    this.currentState = State.START;
+                    return new TokenImp(Kind.MOD, startLineNum, startColNum, "%");
+                }
+                case QUESTION -> {
+                    this.currentState = State.START;
+                    return new TokenImp(Kind.QUESTION, startLineNum, startColNum, "?");
+                }
+                case BANG -> {
+                    this.currentState = State.START;
+                    return new TokenImp(Kind.BANG, startLineNum, startColNum, "!");
+                }
+                case ASSIGN1 -> {
+                    switch (ch) {
+                        case '=' -> {
+                            this.currentState = State.ASSIGN2;
+                        }
+                        default -> {
+                            // Since ':' is not a valid token, any character follow ':' except '=' would
+                            // cause a lexical error.
+                            // ASSIGN1 is not an accept state.
+                            throw new LexicalException("':' can't be followed by any character other than '='",
+                                    startLineNum, startColNum);
+                        }
+                    }
+                }
+                case ASSIGN2 -> {
+                    this.currentState = State.START;
+                    return new TokenImp(Kind.ASSIGN, startLineNum, startColNum, ":=");
+                }
+                case EQ -> {
+                    this.currentState = State.START;
+                    return new TokenImp(Kind.EQ, startLineNum, startColNum, "=");
+                }
+                case NEQ -> {
+                    this.currentState = State.START;
+                    return new TokenImp(Kind.NEQ, startLineNum, startColNum, "#");
+                }
+                case LT -> {
+                    switch (ch) {
+                        case '=' -> {
+                            this.currentState = State.LE;
+                        }
+                        default -> {
+                            this.currentState = State.START;
+                            return new TokenImp(Kind.LT, startLineNum, startColNum, "<");
+                        }
+                    }
+                }
+                case LE -> {
+                    this.currentState = State.START;
+                    return new TokenImp(Kind.LE, startLineNum, startColNum, "<=");
+                }
+                case GT -> {
+                    switch (ch) {
+                        case '=' -> {
+                            this.currentState = State.GE;
+                        }
+                        default -> {
+                            this.currentState = State.START;
+                            return new TokenImp(Kind.GT, startLineNum, startColNum, ">");
+                        }
+                    }
+                }
+                case GE -> {
+                    this.currentState = State.START;
+                    return new TokenImp(Kind.GE, startLineNum, startColNum, ">=");
+                }
+
                 case IN_NUM -> {
                     // keep reading the input till next char is not int
                     switch (ch) {
@@ -188,6 +351,8 @@ public class LexerImp implements ILexer {
                     }
                 }
                 default -> {
+                    // TODO: this is actually not a LexicalException, this is when the DFA went to
+                    // an unknown state, which is supposted to be an error of our code.
                     throw new LexicalException();
                 }
 
