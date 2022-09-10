@@ -6,8 +6,6 @@ package edu.ufl.cise.plpfa22;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.List;
-
 import org.junit.jupiter.api.Test;
 
 import edu.ufl.cise.plpfa22.IToken.Kind;

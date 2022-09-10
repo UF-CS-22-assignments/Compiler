@@ -1,9 +1,6 @@
 package edu.ufl.cise.plpfa22;
 
 import java.util.Map;
-
-import javax.swing.DefaultBoundedRangeModel;
-
 import static java.util.Map.entry;
 
 import edu.ufl.cise.plpfa22.IToken.Kind;
