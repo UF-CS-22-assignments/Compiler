@@ -129,7 +129,7 @@ class LexerTest {
 		String input = """
 				+- *
 				;;;
-				(() )  #//
+				(() )  #/ /
 				""";
 		show(input);
 		ILexer lexer = getLexer(input);
@@ -145,7 +145,7 @@ class LexerTest {
 		checkToken(lexer.next(), Kind.RPAREN, 3, 5, ")");
 		checkToken(lexer.next(), Kind.NEQ, 3, 8, "#");
 		checkToken(lexer.next(), Kind.DIV, 3, 9, "/");
-		checkToken(lexer.next(), Kind.DIV, 3, 10, "/");
+		checkToken(lexer.next(), Kind.DIV, 3, 11, "/");
 
 		checkEOF(lexer.next());
 	}

@@ -263,6 +263,7 @@ public class LexerImp implements ILexer {
                     return new TokenImp(Kind.TIMES, startLineNum, startColNum, "*");
                 }
                 case DIV -> {
+                    // TODO: this need to be changed when implementing the comment part.
                     this.currentState = State.START;
                     return new TokenImp(Kind.DIV, startLineNum, startColNum, "/");
                 }
