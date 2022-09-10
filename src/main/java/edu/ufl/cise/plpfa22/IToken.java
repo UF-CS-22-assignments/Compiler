@@ -21,7 +21,7 @@ public interface IToken {
 		DOT, // .
 		COMMA, // ,
 		SEMI, // ;
-		QUOTE, // "
+		QUOTE, // " (decrepit, there won't be a QUOTE token type)
 		LPAREN, // (
 		RPAREN, // )
 		PLUS, // +

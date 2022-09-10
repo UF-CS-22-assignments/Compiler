@@ -7,10 +7,21 @@ public class TokenImp implements IToken {
 
     private String text;
 
-    public TokenImp(Kind kind, int line, int col, String input) {
+    /**
+     * construct a token
+     * 
+     * @param kind The type of the token. Kind is an enum defind in IToken
+     * @param line the line number of the first character in the input character
+     *             stream.
+     * @param col  the col number of the first character in the in put character
+     *             stream
+     * @param text the string that contains the raw text of the token in the input
+     *             string.
+     */
+    public TokenImp(Kind kind, int line, int col, String text) {
         this.kind = kind;
         this.location = new SourceLocation(line, col);
-        this.text = input;
+        this.text = text;
     }
 
     /**
@@ -36,6 +47,7 @@ public class TokenImp implements IToken {
     @Override
     public char[] getText() {
         // TODO
+        // TODO: make sure for string)lit, it returns the raw characters.
         return text.toCharArray();
     }
 
