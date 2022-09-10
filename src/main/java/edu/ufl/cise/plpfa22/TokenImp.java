@@ -104,8 +104,22 @@ public class TokenImp implements IToken {
      */
     @Override
     public String getStringValue() {
-        // TODO
-        return null;
+        String stringValue = "";
+        int i=1;
+        while(i<text.length()-1){
+            if(text.charAt(i) == '\\'){
+                if(text.charAt(i+1) == 'n'){
+                    stringValue +='\n';
+                }
+                // TODO: Add other special characters
+                i += 2;
+                continue;
+            }
+            stringValue += text.charAt(i);
+            i++;
+
+        }
+        return stringValue;
     }
 
 }
