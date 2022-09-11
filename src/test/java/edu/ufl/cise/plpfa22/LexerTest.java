@@ -239,6 +239,27 @@ class LexerTest {
 		checkEOF(lexer.next());
 	}
 
+	// Several identifiers to test positions
+	@Test
+	public void testIdent0Comment() throws LexicalException {
+		// notice that the characters before ghi is a \t and a space ' '
+		String input = """
+				abc
+				// haha
+				// hello! how are you?
+				// I'm fine thank you and you?
+				  def
+					 ghi
+
+				""";
+		show(input);
+		ILexer lexer = getLexer(input);
+		checkIdent(lexer.next(), "abc", 1, 1);
+		checkIdent(lexer.next(), "def", 5, 3);
+		checkIdent(lexer.next(), "ghi", 6, 3);
+		checkEOF(lexer.next());
+	}
+
 	// Example for testing input with an illegal character
 	@Test
 	void testError0() throws LexicalException {
@@ -261,6 +282,7 @@ class LexerTest {
 	// Several identifiers to test positions
 	@Test
 	public void testIdent0() throws LexicalException {
+		// notice that the characters before ghi is 5 spaces ' '
 		String input = """
 				abc
 				  def

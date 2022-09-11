@@ -63,7 +63,9 @@ public class LexerImp implements ILexer {
         LE, // <= (after LT)
         GT, // >
         GE, // >= (after GT)
-
+        COMMENT1,
+        COMMENT2,
+        COMMENT3,
         STRING_LIT, // string
         STRING_END,
         HAS_SLASH
@@ -149,7 +151,7 @@ public class LexerImp implements ILexer {
                         case '>' -> {
                             this.currentState = State.GT;
                         }
-                        case ' ' -> {
+                        case ' ', '\t', '\r' -> {
                             // skip white spaces
 
                             // since white spaces is not part of the token and is omitted, the start index
@@ -158,7 +160,8 @@ public class LexerImp implements ILexer {
                             startColNum = this.colNum + 1;
                         }
                         case '\n' -> {
-                            // TODO: Consider \r\n
+                            // \r\r don't need to be considered since we can assume that \r will always be
+                            // followed by a \n
                             // reset col to 0 and increase lineNum by 1
                             this.colNum = 0;
                             this.lineNum += 1;
@@ -176,8 +179,7 @@ public class LexerImp implements ILexer {
                             this.currentState = State.IDENT;
                         }
                         case 0 -> {
-                            // TODO: input is wrong(the third argument).
-                            return new TokenImp(Kind.EOF, this.lineNum, this.colNum, input);
+                            return new TokenImp(Kind.EOF, this.lineNum, this.colNum, "");
                         }
                         // start of num_lit
                         case '0' -> {
@@ -273,9 +275,53 @@ public class LexerImp implements ILexer {
                     return new TokenImp(Kind.TIMES, startLineNum, startColNum, "*");
                 }
                 case DIV -> {
-                    // TODO: this need to be changed when implementing the comment part.
+                    switch (ch) {
+                        case '/' -> {
+                            this.currentState = State.COMMENT1;
+                        }
+                        default -> {
+                            this.currentState = State.START;
+                            return new TokenImp(Kind.DIV, startLineNum, startColNum, "/");
+                        }
+                    }
+                }
+                case COMMENT1 -> {
+                    switch (ch) {
+                        case '\r' -> {
+                            this.currentState = State.COMMENT2;
+                            this.lineNum += 1;
+                            this.colNum = 0;
+                        }
+                        case '\n' -> {
+                            this.currentState = State.COMMENT3;
+                            this.lineNum += 1;
+                            this.colNum = 0;
+                        }
+                        case 0 -> {
+                            return new TokenImp(Kind.EOF, this.lineNum, this.colNum, "");
+                        }
+                        default -> {
+
+                        }
+                    }
+                }
+                case COMMENT2 -> {
+                    switch (ch) {
+                        case '\n' -> {
+                            this.currentState = State.COMMENT3;
+                        }
+                        default -> {
+                            throw new LexicalException("an \\r should always be followed by a \\n");
+                        }
+                    }
+                }
+                case COMMENT3 -> {
                     this.currentState = State.START;
-                    return new TokenImp(Kind.DIV, startLineNum, startColNum, "/");
+                    this.pos -= 1; // pos will add 1 at the end of the loop, so minus 1 here to make sure this
+                                   // character is still the next character to read.
+                    this.colNum -= 1; // same for colNum
+                    startLineNum = this.lineNum;
+                    startColNum = this.colNum;
                 }
                 case MOD -> {
                     this.currentState = State.START;
