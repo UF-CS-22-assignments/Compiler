@@ -18,6 +18,9 @@ public class LexerImp implements ILexer {
     private int pos = 0;
     // record the start index for each token
     private int startIndex = 0;
+    // TODO: Could be wrong
+    String stringSentence="";
+
 
     // A map from reserved words to the type of the token. This is needed to check
     // for every identifier token.
@@ -62,6 +65,9 @@ public class LexerImp implements ILexer {
         GT, // >
         GE, // >= (after GT)
 
+        STRING_LIT, // string
+        STRING_END,
+        HAS_SLASH
     }
 
     private State currentState = State.START;
@@ -176,7 +182,7 @@ public class LexerImp implements ILexer {
                         }
                         // start of num_lit
                         case '0' -> {
-                            // TODO: if not dot, return zero
+                            //
                             pos += 1;
 
                             return new TokenImp(Kind.NUM_LIT, this.lineNum, this.colNum, "0");
@@ -184,6 +190,11 @@ public class LexerImp implements ILexer {
                         case '1', '2', '3', '4', '5', '6', '7', '8', '9' -> {
                             // keep track of the startIndex and make the substring later
                             this.currentState = State.IN_NUM;
+                        }
+                        case '"'->{
+                            stringSentence="";
+                            stringSentence += '"';
+                            this.currentState = State.STRING_LIT;
                         }
                         default -> {
                             // Illegal character
@@ -349,6 +360,43 @@ public class LexerImp implements ILexer {
                                     input.substring(startIndex, this.pos));
                         }
                     }
+                }
+                case STRING_LIT -> {
+                    switch (ch){
+                        case '"'->{
+                            //end of a string
+                            this.currentState = State.STRING_END;
+                        }
+                        case '\\'->{
+                            this.currentState = State.HAS_SLASH;
+                        }
+                        case '\n' -> {
+                            stringSentence += '\n';
+                            this.lineNum += 1;
+                        }
+                        default -> {
+                            stringSentence += ch;
+                        }
+                    }
+                }
+                case HAS_SLASH -> {
+                    switch (ch){
+                        case 'b', 't', 'n', 'f', 'r', '"', '\'', '\\'->{
+                            stringSentence += '\\';
+                            stringSentence += ch;
+                            this.currentState = State.STRING_LIT;
+                        }
+                        default->{
+                            throw new LexicalException();
+                        }
+                    }
+
+                }
+                case STRING_END -> {
+                    this.currentState = State.START;
+                    stringSentence += '"';
+                    return new TokenImp(Kind.STRING_LIT,startLineNum,startColNum,
+                            stringSentence);
                 }
                 default -> {
                     // TODO: this is actually not a LexicalException, this is when the DFA went to
