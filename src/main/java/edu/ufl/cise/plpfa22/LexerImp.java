@@ -313,11 +313,11 @@ public class LexerImp implements ILexer {
                 }
                 case COMMENT3 -> {
                     this.currentState = State.START;
+                    startLineNum = this.lineNum;
+                    startColNum = this.colNum;
                     this.pos -= 1; // pos will add 1 at the end of the loop, so minus 1 here to make sure this
                                    // character is still the next character to read.
                     this.colNum -= 1; // same for colNum
-                    startLineNum = this.lineNum;
-                    startColNum = this.colNum;
                 }
                 case MOD -> {
                     this.currentState = State.START;
