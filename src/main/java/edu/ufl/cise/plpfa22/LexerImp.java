@@ -18,8 +18,6 @@ public class LexerImp implements ILexer {
     private int pos = 0;
     // record the start index for each token
     private int startIndex = 0;
-    // TODO: Could be wrong
-    String stringSentence="";
 
 
     // A map from reserved words to the type of the token. This is needed to check
@@ -192,8 +190,6 @@ public class LexerImp implements ILexer {
                             this.currentState = State.IN_NUM;
                         }
                         case '"'->{
-                            stringSentence="";
-                            stringSentence += '"';
                             this.currentState = State.STRING_LIT;
                         }
                         default -> {
@@ -371,19 +367,17 @@ public class LexerImp implements ILexer {
                             this.currentState = State.HAS_SLASH;
                         }
                         case '\n' -> {
-                            stringSentence += '\n';
                             this.lineNum += 1;
                         }
                         default -> {
-                            stringSentence += ch;
+
                         }
                     }
                 }
                 case HAS_SLASH -> {
                     switch (ch){
                         case 'b', 't', 'n', 'f', 'r', '"', '\'', '\\'->{
-                            stringSentence += '\\';
-                            stringSentence += ch;
+
                             this.currentState = State.STRING_LIT;
                         }
                         default->{
@@ -394,9 +388,9 @@ public class LexerImp implements ILexer {
                 }
                 case STRING_END -> {
                     this.currentState = State.START;
-                    stringSentence += '"';
+
                     return new TokenImp(Kind.STRING_LIT,startLineNum,startColNum,
-                            stringSentence);
+                            input.substring(startIndex,this.pos));
                 }
                 default -> {
                     // TODO: this is actually not a LexicalException, this is when the DFA went to

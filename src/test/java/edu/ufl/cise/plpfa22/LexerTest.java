@@ -95,10 +95,11 @@ class LexerTest {
 		assertEquals(expectedString,t.getStringValue());
 	}
 	// check that this token is a string and has expected value and position
-	void checkString(IToken t, String expectText,int expectedLine, int expectedColumn){
-		this.checkToken(t,Kind.STRING_LIT);
-		this.checkText(t,expectText);
-		this.checkLocation(t,expectedLine,expectedColumn);
+	void checkString(IToken t, String expectText, String expectStringValue, int expectedLine, int expectedColumn){
+		this.checkToken(t, Kind.STRING_LIT);
+		this.checkText(t, expectText);
+		this.checkStringValue(t, expectStringValue);
+		this.checkLocation(t,expectedLine, expectedColumn);
 	}
 
 	// check that this token is the EOF token
@@ -368,7 +369,7 @@ class LexerTest {
 				""";
 		show(input);
 		ILexer lexer = getLexer(input);
-		checkString(lexer.next(),"\"string\"",1,1);
+		checkString(lexer.next(),"\"string\"","string",1,1);
 		checkEOF(lexer.next());
 	}
 	@Test
@@ -378,7 +379,7 @@ class LexerTest {
 				""";
 		show(input);
 		ILexer lexer = getLexer(input);
-		checkString(lexer.next(),"\"Escape Sequences\\t\"",1,1);
+		checkString(lexer.next(),"\"Escape Sequences\\t\"","Escape Sequences\t",1,1);
 		checkEOF(lexer.next());
 	}
 	@Test
@@ -391,7 +392,7 @@ class LexerTest {
 
 		show(input);
 		ILexer lexer = getLexer(input);
-		checkString(lexer.next(),"\"ha\nhalo\\nha\"",1,1);
+		checkString(lexer.next(),"\"ha\nhalo\\nha\"","ha\nhalo\nha",1,1);
 		checkIdent(lexer.next(),"abc",3,1);
 		checkEOF(lexer.next());
 	}
@@ -402,7 +403,7 @@ class LexerTest {
 				""";
 		show(input);
 		ILexer lexer = getLexer(input);
-		checkStringValue(lexer.next(),"a b c");
+		checkString(lexer.next(),"\"a b c\"","a b c", 1, 1);
 	}
 	@Test
 	public void testGetStringValue() throws LexicalException{
@@ -411,6 +412,6 @@ class LexerTest {
 				""";
 		show(input);
 		ILexer lexer = getLexer(input);
-		checkStringValue(lexer.next(),"a b\nc");
+		checkString(lexer.next(), "\"a b\\nc\"", "a b\nc", 1, 1);
 	}
 }
