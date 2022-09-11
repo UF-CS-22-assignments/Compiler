@@ -19,8 +19,7 @@ public class LexerImp implements ILexer {
     // record the start index for each token
     private int startIndex = 0;
     // TODO: Could be wrong
-    String stringSentence="";
-
+    String stringSentence = "";
 
     // A map from reserved words to the type of the token. This is needed to check
     // for every identifier token.
@@ -191,8 +190,8 @@ public class LexerImp implements ILexer {
                             // keep track of the startIndex and make the substring later
                             this.currentState = State.IN_NUM;
                         }
-                        case '"'->{
-                            stringSentence="";
+                        case '"' -> {
+                            stringSentence = "";
                             stringSentence += '"';
                             this.currentState = State.STRING_LIT;
                         }
@@ -362,12 +361,12 @@ public class LexerImp implements ILexer {
                     }
                 }
                 case STRING_LIT -> {
-                    switch (ch){
-                        case '"'->{
-                            //end of a string
+                    switch (ch) {
+                        case '"' -> {
+                            // end of a string
                             this.currentState = State.STRING_END;
                         }
-                        case '\\'->{
+                        case '\\' -> {
                             this.currentState = State.HAS_SLASH;
                         }
                         case '\n' -> {
@@ -380,13 +379,13 @@ public class LexerImp implements ILexer {
                     }
                 }
                 case HAS_SLASH -> {
-                    switch (ch){
-                        case 'b', 't', 'n', 'f', 'r', '"', '\'', '\\'->{
+                    switch (ch) {
+                        case 'b', 't', 'n', 'f', 'r', '"', '\'', '\\' -> {
                             stringSentence += '\\';
                             stringSentence += ch;
                             this.currentState = State.STRING_LIT;
                         }
-                        default->{
+                        default -> {
                             throw new LexicalException();
                         }
                     }
@@ -395,7 +394,7 @@ public class LexerImp implements ILexer {
                 case STRING_END -> {
                     this.currentState = State.START;
                     stringSentence += '"';
-                    return new TokenImp(Kind.STRING_LIT,startLineNum,startColNum,
+                    return new TokenImp(Kind.STRING_LIT, startLineNum, startColNum,
                             stringSentence);
                 }
                 default -> {
