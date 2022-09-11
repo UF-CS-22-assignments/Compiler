@@ -108,8 +108,13 @@ public class TokenImp implements IToken {
         int i=1;
         while(i<text.length()-1){
             if(text.charAt(i) == '\\'){
-                if(text.charAt(i+1) == 'n'){
-                    stringValue +='\n';
+                switch (text.charAt(i+1)){
+                    case 'n'->{
+                        stringValue +='\n';
+                    }
+                    case 't' ->{
+                        stringValue += '\t';
+                    }
                 }
                 // TODO: Add other special characters
                 i += 2;
