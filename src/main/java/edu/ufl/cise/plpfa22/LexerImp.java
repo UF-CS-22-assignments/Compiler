@@ -19,7 +19,6 @@ public class LexerImp implements ILexer {
     // record the start index for each token
     private int startIndex = 0;
 
-
     // A map from reserved words to the type of the token. This is needed to check
     // for every identifier token.
     // TODO: check this map after recognizing an identifier token
@@ -62,7 +61,9 @@ public class LexerImp implements ILexer {
         LE, // <= (after LT)
         GT, // >
         GE, // >= (after GT)
-
+        COMMENT1,
+        COMMENT2,
+        COMMENT3,
         STRING_LIT, // string
         STRING_END,
         HAS_SLASH
@@ -148,7 +149,7 @@ public class LexerImp implements ILexer {
                         case '>' -> {
                             this.currentState = State.GT;
                         }
-                        case ' ' -> {
+                        case ' ', '\t', '\r' -> {
                             // skip white spaces
 
                             // since white spaces is not part of the token and is omitted, the start index
@@ -157,7 +158,8 @@ public class LexerImp implements ILexer {
                             startColNum = this.colNum + 1;
                         }
                         case '\n' -> {
-                            // TODO: Consider \r\n
+                            // \r\r don't need to be considered since we can assume that \r will always be
+                            // followed by a \n
                             // reset col to 0 and increase lineNum by 1
                             this.colNum = 0;
                             this.lineNum += 1;
@@ -175,8 +177,7 @@ public class LexerImp implements ILexer {
                             this.currentState = State.IDENT;
                         }
                         case 0 -> {
-                            // TODO: input is wrong(the third argument).
-                            return new TokenImp(Kind.EOF, this.lineNum, this.colNum, input);
+                            return new TokenImp(Kind.EOF, this.lineNum, this.colNum, "");
                         }
                         // start of num_lit
                         case '0' -> {
@@ -189,7 +190,7 @@ public class LexerImp implements ILexer {
                             // keep track of the startIndex and make the substring later
                             this.currentState = State.IN_NUM;
                         }
-                        case '"'->{
+                        case '"' -> {
                             this.currentState = State.STRING_LIT;
                         }
                         default -> {
@@ -270,9 +271,53 @@ public class LexerImp implements ILexer {
                     return new TokenImp(Kind.TIMES, startLineNum, startColNum, "*");
                 }
                 case DIV -> {
-                    // TODO: this need to be changed when implementing the comment part.
+                    switch (ch) {
+                        case '/' -> {
+                            this.currentState = State.COMMENT1;
+                        }
+                        default -> {
+                            this.currentState = State.START;
+                            return new TokenImp(Kind.DIV, startLineNum, startColNum, "/");
+                        }
+                    }
+                }
+                case COMMENT1 -> {
+                    switch (ch) {
+                        case '\r' -> {
+                            this.currentState = State.COMMENT2;
+                            this.lineNum += 1;
+                            this.colNum = 0;
+                        }
+                        case '\n' -> {
+                            this.currentState = State.COMMENT3;
+                            this.lineNum += 1;
+                            this.colNum = 0;
+                        }
+                        case 0 -> {
+                            return new TokenImp(Kind.EOF, this.lineNum, this.colNum, "");
+                        }
+                        default -> {
+
+                        }
+                    }
+                }
+                case COMMENT2 -> {
+                    switch (ch) {
+                        case '\n' -> {
+                            this.currentState = State.COMMENT3;
+                        }
+                        default -> {
+                            throw new LexicalException("an \\r should always be followed by a \\n");
+                        }
+                    }
+                }
+                case COMMENT3 -> {
                     this.currentState = State.START;
-                    return new TokenImp(Kind.DIV, startLineNum, startColNum, "/");
+                    startLineNum = this.lineNum;
+                    startColNum = this.colNum;
+                    this.pos -= 1; // pos will add 1 at the end of the loop, so minus 1 here to make sure this
+                                   // character is still the next character to read.
+                    this.colNum -= 1; // same for colNum
                 }
                 case MOD -> {
                     this.currentState = State.START;
@@ -358,12 +403,12 @@ public class LexerImp implements ILexer {
                     }
                 }
                 case STRING_LIT -> {
-                    switch (ch){
-                        case '"'->{
-                            //end of a string
+                    switch (ch) {
+                        case '"' -> {
+                            // end of a string
                             this.currentState = State.STRING_END;
                         }
-                        case '\\'->{
+                        case '\\' -> {
                             this.currentState = State.HAS_SLASH;
                         }
                         case '\n' -> {
@@ -375,12 +420,12 @@ public class LexerImp implements ILexer {
                     }
                 }
                 case HAS_SLASH -> {
-                    switch (ch){
-                        case 'b', 't', 'n', 'f', 'r', '"', '\'', '\\'->{
+                    switch (ch) {
+                        case 'b', 't', 'n', 'f', 'r', '"', '\'', '\\' -> {
 
                             this.currentState = State.STRING_LIT;
                         }
-                        default->{
+                        default -> {
                             throw new LexicalException();
                         }
                     }
@@ -389,8 +434,8 @@ public class LexerImp implements ILexer {
                 case STRING_END -> {
                     this.currentState = State.START;
 
-                    return new TokenImp(Kind.STRING_LIT,startLineNum,startColNum,
-                            input.substring(startIndex,this.pos));
+                    return new TokenImp(Kind.STRING_LIT, startLineNum, startColNum,
+                            input.substring(startIndex, this.pos));
                 }
                 default -> {
                     // TODO: this is actually not a LexicalException, this is when the DFA went to

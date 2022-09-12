@@ -91,15 +91,17 @@ class LexerTest {
 		checkInt(t, expectedValue);
 		this.checkLocation(t, expectedLine, expectedColumn);
 	}
-	void checkStringValue(IToken t, String expectedString){
-		assertEquals(expectedString,t.getStringValue());
+
+	void checkStringValue(IToken t, String expectedString) {
+		assertEquals(expectedString, t.getStringValue());
 	}
+
 	// check that this token is a string and has expected value and position
-	void checkString(IToken t, String expectText, String expectStringValue, int expectedLine, int expectedColumn){
+	void checkString(IToken t, String expectText, String expectStringValue, int expectedLine, int expectedColumn) {
 		this.checkToken(t, Kind.STRING_LIT);
 		this.checkText(t, expectText);
 		this.checkStringValue(t, expectStringValue);
-		this.checkLocation(t,expectedLine, expectedColumn);
+		this.checkLocation(t, expectedLine, expectedColumn);
 	}
 
 	// check that this token is the EOF token
@@ -238,6 +240,27 @@ class LexerTest {
 		checkEOF(lexer.next());
 	}
 
+	// Several identifiers to test positions
+	@Test
+	public void testIdent0Comment() throws LexicalException {
+		// notice that the characters before ghi is a \t and a space ' '
+		String input = """
+				abc
+				// haha
+				// hello! how are you?
+				// I'm fine thank you and you?
+				  def
+					 ghi
+
+				""";
+		show(input);
+		ILexer lexer = getLexer(input);
+		checkIdent(lexer.next(), "abc", 1, 1);
+		checkIdent(lexer.next(), "def", 5, 3);
+		checkIdent(lexer.next(), "ghi", 6, 3);
+		checkEOF(lexer.next());
+	}
+
 	// Example for testing input with an illegal character
 	@Test
 	void testError0() throws LexicalException {
@@ -260,6 +283,7 @@ class LexerTest {
 	// Several identifiers to test positions
 	@Test
 	public void testIdent0() throws LexicalException {
+		// notice that the characters before ghi is 5 spaces ' '
 		String input = """
 				abc
 				  def
@@ -362,51 +386,56 @@ class LexerTest {
 		String expectedText = "\" ...  \\\"  \\\'  \\\\  \""; // almost the same as input, but white space is omitted
 		assertEquals(expectedText, text);
 	}
+
 	@Test
-	public void testSimpleString() throws LexicalException{
+	public void testSimpleString() throws LexicalException {
 		String input = """
 				"string"
 				""";
 		show(input);
 		ILexer lexer = getLexer(input);
-		checkString(lexer.next(),"\"string\"","string",1,1);
+		checkString(lexer.next(), "\"string\"", "string", 1, 1);
 		checkEOF(lexer.next());
 	}
+
 	@Test
-	public void testStringWithEscapeSequences() throws LexicalException{
+	public void testStringWithEscapeSequences() throws LexicalException {
 		String input = """
 				"Escape Sequences\\t"
 				""";
 		show(input);
 		ILexer lexer = getLexer(input);
-		checkString(lexer.next(),"\"Escape Sequences\\t\"","Escape Sequences\t",1,1);
+		checkString(lexer.next(), "\"Escape Sequences\\t\"", "Escape Sequences\t", 1, 1);
 		checkEOF(lexer.next());
 	}
+
 	@Test
-	public void testStringWithNewLine() throws LexicalException{
+	public void testStringWithNewLine() throws LexicalException {
 		String input = """
-            "ha
-            halo\\nha"
-            abc
-            """;
+				"ha
+				halo\\nha"
+				abc
+				""";
 
 		show(input);
 		ILexer lexer = getLexer(input);
-		checkString(lexer.next(),"\"ha\nhalo\\nha\"","ha\nhalo\nha",1,1);
-		checkIdent(lexer.next(),"abc",3,1);
+		checkString(lexer.next(), "\"ha\nhalo\\nha\"", "ha\nhalo\nha", 1, 1);
+		checkIdent(lexer.next(), "abc", 3, 1);
 		checkEOF(lexer.next());
 	}
+
 	@Test
-	public void testSimpleGetStringValue() throws LexicalException{
+	public void testSimpleGetStringValue() throws LexicalException {
 		String input = """
 				"a b c"
 				""";
 		show(input);
 		ILexer lexer = getLexer(input);
-		checkString(lexer.next(),"\"a b c\"","a b c", 1, 1);
+		checkString(lexer.next(), "\"a b c\"", "a b c", 1, 1);
 	}
+
 	@Test
-	public void testGetStringValue() throws LexicalException{
+	public void testGetStringValue() throws LexicalException {
 		String input = """
 				"a b\\nc"
 				""";

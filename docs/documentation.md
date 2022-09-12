@@ -22,3 +22,6 @@ Due: Sep. 15, 8 am
 |      |              |          |
 |      |              |          |
 
+# DFA
+
+![comment and DIV](./documentation.assets/DFA_Comment_and_DIV.jpg)

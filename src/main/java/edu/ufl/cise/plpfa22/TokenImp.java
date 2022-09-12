@@ -104,27 +104,51 @@ public class TokenImp implements IToken {
      */
     @Override
     public String getStringValue() {
-        String stringValue = "";
-        int i=1;
-        while(i<text.length()-1){
-            if(text.charAt(i) == '\\'){
-                switch (text.charAt(i+1)){
-                    case 'n'->{
-                        stringValue +='\n';
+        StringBuilder resStringBuilder = new StringBuilder();
+        int i = 1;
+        // iterate text[1:length - 1], to remove the two quotes.
+        while (i < text.length() - 1) {
+            if (text.charAt(i) == '\\') {
+                switch (text.charAt(i + 1)) {
+                    case 'n' -> {
+                        resStringBuilder.append('\n');
                     }
-                    case 't' ->{
-                        stringValue += '\t';
+                    case 't' -> {
+                        resStringBuilder.append('\t');
+                    }
+                    case 'b' -> {
+                        resStringBuilder.append('\b');
+                    }
+                    case 'f' -> {
+                        resStringBuilder.append('\f');
+                    }
+                    case 'r' -> {
+                        resStringBuilder.append('\r');
+                    }
+                    case '"' -> {
+                        resStringBuilder.append('\"');
+                    }
+                    case '\'' -> {
+                        resStringBuilder.append('\'');
+                    }
+                    case '\\' -> {
+                        resStringBuilder.append('\\');
+                    }
+                    default -> {
+                        // it would be a bug to be here.
+                        // since we can't modify the IToken class, we can't throw exceptions here, so
+                        // just assert false here.
+                        assert false;
                     }
                 }
-                // TODO: Add other special characters
                 i += 2;
                 continue;
             }
-            stringValue += text.charAt(i);
+            resStringBuilder.append(text.charAt(i));
             i++;
 
         }
-        return stringValue;
+        return resStringBuilder.toString();
     }
 
 }
