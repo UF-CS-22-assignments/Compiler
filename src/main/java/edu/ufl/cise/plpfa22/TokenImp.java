@@ -55,8 +55,6 @@ public class TokenImp implements IToken {
      */
     @Override
     public char[] getText() {
-        // TODO
-        // TODO: make sure for string)lit, it returns the raw characters.
         return text.toCharArray();
     }
 
@@ -78,7 +76,6 @@ public class TokenImp implements IToken {
      */
     @Override
     public int getIntValue() {
-        // TODO
         return num;
     }
 
@@ -97,7 +94,7 @@ public class TokenImp implements IToken {
 
     /**
      * Precondition: getKind == STRING_LIT
-     * 
+     *
      * @return String value represented by the characters in this IToken. The
      *         returned String does not include the delimiters, and escape sequences
      *         have been handled.

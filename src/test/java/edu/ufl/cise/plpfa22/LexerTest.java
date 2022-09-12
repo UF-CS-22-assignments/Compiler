@@ -443,4 +443,75 @@ class LexerTest {
 		ILexer lexer = getLexer(input);
 		checkString(lexer.next(), "\"a b\\nc\"", "a b\nc", 1, 1);
 	}
+	@Test
+	public void testSimplePeek() throws LexicalException{
+		String input = """
+				peek123
+				""";
+		show(input);
+		ILexer lexer = getLexer(input);
+		checkIdent(lexer.peek(),"peek123",1,1);
+	}
+	@Test
+	public void testPeekAndNext() throws LexicalException{
+		String input = """
+				123peek
+				""";
+		show(input);
+		ILexer lexer = getLexer(input);
+		checkInt(lexer.peek(),123,1,1);
+		checkInt(lexer.next(),123,1,1);
+		checkIdent(lexer.next(),"peek",1,4);
+	}
+	@Test
+	public void testStringPeekAndNext() throws LexicalException{
+		String input = """
+				"This is a string"
+				123peek
+				""";
+		show(input);
+		ILexer lexer = getLexer(input);
+		checkString(lexer.peek(),"\"This is a string\"", "This is a string",1,1);
+		checkString(lexer.next(),"\"This is a string\"", "This is a string",1,1);
+		checkInt(lexer.next(),123,2,1);
+		checkIdent(lexer.next(),"peek",2,4);
+	}
+	//Mix of ID's, Num_lit, comments, string_lit's
+	@Test
+	public void testIDNNUM() throws LexicalException {
+		String input = """
+        df123 345 g546 IF
+        //next is string
+
+         "Hello, World"
+        """;
+		ILexer lexer = getLexer(input);
+		checkIdent(lexer.next(), "df123", 1,1);
+		checkInt(lexer.next(), 345, 1,7);
+		checkIdent(lexer.next(), "g546", 1,11);
+		checkToken(lexer.next(), Kind.KW_IF, 1,16);
+		checkToken(lexer.next(), Kind.STRING_LIT, 4,2);
+		checkEOF(lexer.next());
+	}
+	@Test
+	public void testInvalidIdent() throws LexicalException {
+		String input = """
+				$valid_123
+				valid_and_symbol+
+				invalid^
+				""";
+		show(input);
+		ILexer lexer = getLexer(input);
+		// all good
+		checkIdent(lexer.next(), "$valid_123", 1,1);
+		// broken up into an ident and a plus
+		checkIdent(lexer.next(), "valid_and_symbol", 2,1);
+		checkToken(lexer.next(), Kind.PLUS, 2, 17);
+		// broken up into a valid ident and an invalid one (throws ex)
+		checkIdent(lexer.next(), "invalid", 3,1);
+		assertThrows(LexicalException.class, () -> {
+			lexer.next();
+		});
+	}
+
 }
