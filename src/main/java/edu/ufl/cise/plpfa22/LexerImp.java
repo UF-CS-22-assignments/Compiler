@@ -413,6 +413,7 @@ public class LexerImp implements ILexer {
                         }
                         case '\n' -> {
                             this.lineNum += 1;
+                            this.colNum = 0;
                         }
                         default -> {
 
