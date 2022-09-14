@@ -351,7 +351,7 @@ class LexerTest2 {
     @Test
     public void testUnterminatedString() throws LexicalException {
         String input = """
-                "unterminated
+                \"unterminated
                 """;
         ILexer lexer = getLexer(input);
         assertThrows(LexicalException.class, () -> {
@@ -488,7 +488,6 @@ class LexerTest2 {
         assertThrows(LexicalException.class, () -> {
             lexer.next();
         });
-        checkEOF(lexer.next());
     }
 
 }

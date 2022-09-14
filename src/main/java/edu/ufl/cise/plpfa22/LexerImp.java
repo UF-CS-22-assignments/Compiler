@@ -31,7 +31,7 @@ public class LexerImp implements ILexer {
             entry("BEGIN", Kind.KW_BEGIN),
             entry("END", Kind.KW_END),
             entry("IF", Kind.KW_IF),
-            entry("Then", Kind.KW_THEN),
+            entry("THEN", Kind.KW_THEN),
             entry("WHILE", Kind.KW_WHILE),
             entry("DO", Kind.KW_DO));
 
@@ -182,8 +182,9 @@ public class LexerImp implements ILexer {
                         case '0' -> {
                             //
                             pos += 1;
+                            this.colNum += 1;
 
-                            return new TokenImp(Kind.NUM_LIT, this.lineNum, this.colNum, "0");
+                            return new TokenImp(Kind.NUM_LIT, startLineNum, startColNum, "0");
                         }
                         case '1', '2', '3', '4', '5', '6', '7', '8', '9' -> {
                             // keep track of the startIndex and make the substring later
@@ -413,6 +414,10 @@ public class LexerImp implements ILexer {
                         case '\n' -> {
                             this.lineNum += 1;
                             this.colNum = 0;
+                        }
+                        case 0 -> {
+                            // hit EOF, that means the quote is not closed.
+                            throw new LexicalException("Unterminated String", startLineNum, startColNum);
                         }
                         default -> {
 
