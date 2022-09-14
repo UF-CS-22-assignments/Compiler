@@ -541,4 +541,19 @@ class LexerTest {
 		});
 	}
 
+	@Test
+	public void testIdenString() throws LexicalException {
+		String input = """
+				$valid_123 _haha \"hello_ **\"*?
+				""";
+		show(input);
+		ILexer lexer = getLexer(input);
+		this.checkIdent(lexer.next(), "$valid_123", 1, 1);
+		this.checkIdent(lexer.next(), "_haha", 1, 12);
+		this.checkString(lexer.next(), "\"hello_ **\"", "hello_ **", 1, 18);
+		this.checkToken(lexer.peek(), Kind.TIMES, 1, 29);
+		this.checkToken(lexer.next(), Kind.TIMES, 1, 29);
+		this.checkToken(lexer.next(), Kind.QUESTION, 1, 30);
+	}
+
 }
