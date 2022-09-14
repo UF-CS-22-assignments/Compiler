@@ -7,6 +7,8 @@ public class TokenImp implements IToken {
 
     private String text;
 
+    private String stringValue;
+
     /**
      * construct a token
      * 
@@ -30,6 +32,8 @@ public class TokenImp implements IToken {
             } catch (NumberFormatException nfe) {
                 throw new LexicalException(nfe);
             }
+        } else if (kind == Kind.STRING_LIT) {
+            this.stringValue = this.computeStringValue(text);
         }
     }
 
@@ -94,14 +98,14 @@ public class TokenImp implements IToken {
     }
 
     /**
-     * Precondition: getKind == STRING_LIT
-     *
-     * @return String value represented by the characters in this IToken. The
-     *         returned String does not include the delimiters, and escape sequences
-     *         have been handled.
+     * compute the string value of a given text (mainly about the escape characters)
+     * escape characters remain what it is, and two characters that combined to an
+     * excape character shall be replaced by the coresponding escape characters.
+     * 
+     * @param text input text, including some escape characters.
+     * @return the String value.
      */
-    @Override
-    public String getStringValue() {
+    private String computeStringValue(String text) {
         StringBuilder resStringBuilder = new StringBuilder();
         int i = 1;
         // iterate text[1:length - 1], to remove the two quotes.
@@ -147,6 +151,27 @@ public class TokenImp implements IToken {
 
         }
         return resStringBuilder.toString();
+    }
+
+    /**
+     * Precondition: getKind == STRING_LIT
+     *
+     * @return String value represented by the characters in this IToken. The
+     *         returned String does not include the delimiters, and escape sequences
+     *         have been handled.
+     * @throws LexicalException
+     */
+    @Override
+    public String getStringValue() {
+        if (this.kind != Kind.STRING_LIT) {
+            // a token other than STRING_LIT should not call this methods. I would like to
+            // throw an exception here, but we can't change the IToken interface, so I can't
+            // throw a lexicalException here, so just assert false here.
+
+            assert false;
+        }
+
+        return this.stringValue;
     }
 
 }
