@@ -488,7 +488,6 @@ class LexerTest2 {
         assertThrows(LexicalException.class, () -> {
             lexer.next();
         });
-        checkEOF(lexer.next());
     }
 
 }
