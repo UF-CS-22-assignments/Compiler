@@ -415,6 +415,10 @@ public class LexerImp implements ILexer {
                             this.lineNum += 1;
                             this.colNum = 0;
                         }
+                        case 0 -> {
+                            // hit EOF, that means the quote is not closed.
+                            throw new LexicalException("Unterminated String", startLineNum, startColNum);
+                        }
                         default -> {
 
                         }
