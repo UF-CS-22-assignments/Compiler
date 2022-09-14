@@ -130,7 +130,6 @@ class LexerTest {
 				""";
 		show(input);
 		ILexer lexer = getLexer(input);
-		// TODO: test the text of the token
 		checkToken(lexer.next(), Kind.PLUS, 1, 1, "+");
 		checkToken(lexer.next(), Kind.MINUS, 2, 1, "-");
 		checkEOF(lexer.next());
@@ -169,7 +168,6 @@ class LexerTest {
 				""";
 		show(input);
 		ILexer lexer = getLexer(input);
-		// TODO: test the text of the token
 		checkToken(lexer.next(), Kind.DOT, 1, 1, ".");
 		checkToken(lexer.next(), Kind.COMMA, 1, 2, ",");
 		checkToken(lexer.next(), Kind.SEMI, 1, 3, ";");
@@ -425,6 +423,20 @@ class LexerTest {
 	}
 
 	@Test
+	public void testStringWithNewLine1() throws LexicalException {
+		String input = """
+				\"ha
+				halo\nha\"abc
+				""";
+
+		show(input);
+		ILexer lexer = getLexer(input);
+		checkString(lexer.next(), "\"ha\nhalo\nha\"", "ha\nhalo\nha", 1, 1);
+		checkIdent(lexer.next(), "abc", 3, 4);
+		checkEOF(lexer.next());
+	}
+
+	@Test
 	public void testSimpleGetStringValue() throws LexicalException {
 		String input = """
 				"a b c"
@@ -443,56 +455,71 @@ class LexerTest {
 		ILexer lexer = getLexer(input);
 		checkString(lexer.next(), "\"a b\\nc\"", "a b\nc", 1, 1);
 	}
+
 	@Test
-	public void testSimplePeek() throws LexicalException{
+	public void testGetStringValue1() throws LexicalException {
+		String input = """
+				\"abc\\b\"
+				""";
+		show(input);
+		ILexer lexer = getLexer(input);
+		checkString(lexer.next(), "\"abc\\b\"", "abc\b", 1, 1);
+	}
+
+	@Test
+	public void testSimplePeek() throws LexicalException {
 		String input = """
 				peek123
 				""";
 		show(input);
 		ILexer lexer = getLexer(input);
-		checkIdent(lexer.peek(),"peek123",1,1);
+		checkIdent(lexer.peek(), "peek123", 1, 1);
 	}
+
 	@Test
-	public void testPeekAndNext() throws LexicalException{
+	public void testPeekAndNext() throws LexicalException {
 		String input = """
 				123peek
 				""";
 		show(input);
 		ILexer lexer = getLexer(input);
-		checkInt(lexer.peek(),123,1,1);
-		checkInt(lexer.next(),123,1,1);
-		checkIdent(lexer.next(),"peek",1,4);
+		checkInt(lexer.peek(), 123, 1, 1);
+		checkInt(lexer.next(), 123, 1, 1);
+		checkIdent(lexer.next(), "peek", 1, 4);
 	}
+
 	@Test
-	public void testStringPeekAndNext() throws LexicalException{
+	public void testStringPeekAndNext() throws LexicalException {
 		String input = """
 				"This is a string"
 				123peek
 				""";
 		show(input);
 		ILexer lexer = getLexer(input);
-		checkString(lexer.peek(),"\"This is a string\"", "This is a string",1,1);
-		checkString(lexer.next(),"\"This is a string\"", "This is a string",1,1);
-		checkInt(lexer.next(),123,2,1);
-		checkIdent(lexer.next(),"peek",2,4);
+		checkString(lexer.peek(), "\"This is a string\"", "This is a string", 1, 1);
+		checkString(lexer.next(), "\"This is a string\"", "This is a string", 1, 1);
+		checkInt(lexer.next(), 123, 2, 1);
+		checkIdent(lexer.next(), "peek", 2, 4);
 	}
-	//Mix of ID's, Num_lit, comments, string_lit's
+
+	// Mix of ID's, Num_lit, comments, string_lit's
 	@Test
 	public void testIDNNUM() throws LexicalException {
 		String input = """
-        df123 345 g546 IF
-        //next is string
+				df123 345 g546 IF
+				//next is string
 
-         "Hello, World"
-        """;
+				 "Hello, World"
+				""";
 		ILexer lexer = getLexer(input);
-		checkIdent(lexer.next(), "df123", 1,1);
-		checkInt(lexer.next(), 345, 1,7);
-		checkIdent(lexer.next(), "g546", 1,11);
-		checkToken(lexer.next(), Kind.KW_IF, 1,16);
-		checkToken(lexer.next(), Kind.STRING_LIT, 4,2);
+		checkIdent(lexer.next(), "df123", 1, 1);
+		checkInt(lexer.next(), 345, 1, 7);
+		checkIdent(lexer.next(), "g546", 1, 11);
+		checkToken(lexer.next(), Kind.KW_IF, 1, 16);
+		checkToken(lexer.next(), Kind.STRING_LIT, 4, 2);
 		checkEOF(lexer.next());
 	}
+
 	@Test
 	public void testInvalidIdent() throws LexicalException {
 		String input = """
@@ -503,12 +530,12 @@ class LexerTest {
 		show(input);
 		ILexer lexer = getLexer(input);
 		// all good
-		checkIdent(lexer.next(), "$valid_123", 1,1);
+		checkIdent(lexer.next(), "$valid_123", 1, 1);
 		// broken up into an ident and a plus
-		checkIdent(lexer.next(), "valid_and_symbol", 2,1);
+		checkIdent(lexer.next(), "valid_and_symbol", 2, 1);
 		checkToken(lexer.next(), Kind.PLUS, 2, 17);
 		// broken up into a valid ident and an invalid one (throws ex)
-		checkIdent(lexer.next(), "invalid", 3,1);
+		checkIdent(lexer.next(), "invalid", 3, 1);
 		assertThrows(LexicalException.class, () -> {
 			lexer.next();
 		});

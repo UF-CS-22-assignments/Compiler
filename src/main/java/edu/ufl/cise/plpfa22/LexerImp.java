@@ -21,7 +21,6 @@ public class LexerImp implements ILexer {
 
     // A map from reserved words to the type of the token. This is needed to check
     // for every identifier token.
-    // TODO: check this map after recognizing an identifier token
     private Map<String, Kind> reservedWords = Map.ofEntries(
             entry("TRUE", Kind.BOOLEAN_LIT),
             entry("FALSE", Kind.BOOLEAN_LIT),
@@ -439,9 +438,8 @@ public class LexerImp implements ILexer {
                             input.substring(startIndex, this.pos));
                 }
                 default -> {
-                    // TODO: this is actually not a LexicalException, this is when the DFA went to
-                    // an unknown state, which is supposted to be an error of our code.
-                    throw new LexicalException();
+                    // it would be an error if the current state is not in the above states
+                    assert false;
                 }
 
             }
