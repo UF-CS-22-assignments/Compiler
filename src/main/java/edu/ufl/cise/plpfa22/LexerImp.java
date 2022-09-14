@@ -413,6 +413,7 @@ public class LexerImp implements ILexer {
                         }
                         case '\n' -> {
                             this.lineNum += 1;
+                            this.colNum = 0;
                         }
                         default -> {
 
@@ -438,9 +439,8 @@ public class LexerImp implements ILexer {
                             input.substring(startIndex, this.pos));
                 }
                 default -> {
-                    // TODO: this is actually not a LexicalException, this is when the DFA went to
-                    // an unknown state, which is supposted to be an error of our code.
-                    throw new LexicalException();
+                    // it would be an error if the current state is not in the above states
+                    assert false;
                 }
 
             }
