@@ -55,8 +55,6 @@ public class TokenImp implements IToken {
      */
     @Override
     public char[] getText() {
-        // TODO
-        // TODO: make sure for string)lit, it returns the raw characters.
         return text.toCharArray();
     }
 
@@ -78,7 +76,6 @@ public class TokenImp implements IToken {
      */
     @Override
     public int getIntValue() {
-        // TODO
         return num;
     }
 
@@ -90,7 +87,8 @@ public class TokenImp implements IToken {
     @Override
     public boolean getBooleanValue() {
         if (this.kind != Kind.BOOLEAN_LIT) {
-            // TODO: raise a custom exception.
+            // the method can't be invoked if the kind of the token is not BOOLEAN_LIT
+            assert false;
         }
         return this.text.equals("TRUE");
     }
