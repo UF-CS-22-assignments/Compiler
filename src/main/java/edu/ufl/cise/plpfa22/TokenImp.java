@@ -95,7 +95,7 @@ public class TokenImp implements IToken {
 
     /**
      * Precondition: getKind == STRING_LIT
-     * 
+     *
      * @return String value represented by the characters in this IToken. The
      *         returned String does not include the delimiters, and escape sequences
      *         have been handled.

@@ -21,7 +21,6 @@ public class LexerImp implements ILexer {
 
     // A map from reserved words to the type of the token. This is needed to check
     // for every identifier token.
-    // TODO: check this map after recognizing an identifier token
     private Map<String, Kind> reservedWords = Map.ofEntries(
             entry("TRUE", Kind.BOOLEAN_LIT),
             entry("FALSE", Kind.BOOLEAN_LIT),
