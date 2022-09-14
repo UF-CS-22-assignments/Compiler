@@ -130,7 +130,6 @@ class LexerTest {
 				""";
 		show(input);
 		ILexer lexer = getLexer(input);
-		// TODO: test the text of the token
 		checkToken(lexer.next(), Kind.PLUS, 1, 1, "+");
 		checkToken(lexer.next(), Kind.MINUS, 2, 1, "-");
 		checkEOF(lexer.next());
@@ -169,7 +168,6 @@ class LexerTest {
 				""";
 		show(input);
 		ILexer lexer = getLexer(input);
-		// TODO: test the text of the token
 		checkToken(lexer.next(), Kind.DOT, 1, 1, ".");
 		checkToken(lexer.next(), Kind.COMMA, 1, 2, ",");
 		checkToken(lexer.next(), Kind.SEMI, 1, 3, ";");
@@ -425,6 +423,20 @@ class LexerTest {
 	}
 
 	@Test
+	public void testStringWithNewLine1() throws LexicalException {
+		String input = """
+				\"ha
+				halo\nha\"abc
+				""";
+
+		show(input);
+		ILexer lexer = getLexer(input);
+		checkString(lexer.next(), "\"ha\nhalo\nha\"", "ha\nhalo\nha", 1, 1);
+		checkIdent(lexer.next(), "abc", 3, 4);
+		checkEOF(lexer.next());
+	}
+
+	@Test
 	public void testSimpleGetStringValue() throws LexicalException {
 		String input = """
 				"a b c"
@@ -443,4 +455,15 @@ class LexerTest {
 		ILexer lexer = getLexer(input);
 		checkString(lexer.next(), "\"a b\\nc\"", "a b\nc", 1, 1);
 	}
+
+	@Test
+	public void testGetStringValue1() throws LexicalException {
+		String input = """
+				\"abc\\b\"
+				""";
+		show(input);
+		ILexer lexer = getLexer(input);
+		checkString(lexer.next(), "\"abc\\b\"", "abc\b", 1, 1);
+	}
+
 }
