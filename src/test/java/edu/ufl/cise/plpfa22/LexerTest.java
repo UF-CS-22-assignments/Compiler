@@ -238,6 +238,20 @@ class LexerTest {
 		checkEOF(lexer.next());
 	}
 
+	@Test
+	void testComment1() throws LexicalException {
+		// Note that the quotes around "This is a string" are passed to the lexer.
+		String input = """
+				//comment
+				VAR X = 34%2;
+				*
+				""";
+		show(input);
+		ILexer lexer = getLexer(input);
+		checkToken(lexer.next(), Kind.KW_VAR, 2, 1);
+
+	}
+
 	// Several identifiers to test positions
 	@Test
 	public void testIdent0Comment() throws LexicalException {

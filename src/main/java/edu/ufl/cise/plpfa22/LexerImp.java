@@ -315,6 +315,7 @@ public class LexerImp implements ILexer {
                     this.currentState = State.START;
                     startLineNum = this.lineNum;
                     startColNum = this.colNum;
+                    startIndex = this.pos;
                     this.pos -= 1; // pos will add 1 at the end of the loop, so minus 1 here to make sure this
                                    // character is still the next character to read.
                     this.colNum -= 1; // same for colNum
