@@ -4,15 +4,8 @@
 
 package edu.ufl.cise.plpfa22;
 
-public class CompilerComponentFactory {
+import edu.ufl.cise.plpfa22.ast.ASTNode;
 
-	public static ILexer getLexer(String input) {
-		return new LexerImp(input);
-
-	}
-
-	public static IParser getParser(ILexer lexer) {
-		return new ParserImp(lexer);
-	}
-
+public interface IParser {
+	ASTNode parse() throws PLPException;
 }
