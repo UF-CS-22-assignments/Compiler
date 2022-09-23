@@ -3,6 +3,8 @@ package edu.ufl.cise.plpfa22;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.ToolTipManager;
+
 import edu.ufl.cise.plpfa22.IToken.Kind;
 import edu.ufl.cise.plpfa22.ast.ASTNode;
 import edu.ufl.cise.plpfa22.ast.Block;
@@ -16,7 +18,13 @@ import edu.ufl.cise.plpfa22.ast.ProcDec;
 import edu.ufl.cise.plpfa22.ast.Program;
 import edu.ufl.cise.plpfa22.ast.Statement;
 import edu.ufl.cise.plpfa22.ast.StatementAssign;
+import edu.ufl.cise.plpfa22.ast.StatementBlock;
+import edu.ufl.cise.plpfa22.ast.StatementCall;
 import edu.ufl.cise.plpfa22.ast.StatementEmpty;
+import edu.ufl.cise.plpfa22.ast.StatementIf;
+import edu.ufl.cise.plpfa22.ast.StatementInput;
+import edu.ufl.cise.plpfa22.ast.StatementOutput;
+import edu.ufl.cise.plpfa22.ast.StatementWhile;
 import edu.ufl.cise.plpfa22.ast.VarDec;
 
 public class ParserImp implements IParser {
@@ -241,14 +249,18 @@ public class ParserImp implements IParser {
             case BANG -> {
                 statement = this.statementOutput();
             }
+            case KW_BEGIN -> {
+                statement = this.statementBlock();
+            }
             case KW_IF -> {
                 statement = this.statementIf();
             }
             case KW_WHILE -> {
                 statement = this.statementWhile();
             }
-            case DOT, SEMI -> {
-                // should be FOLLOW(Statement) = FOLLOW(Block) since Statement only
+            case DOT, SEMI, KW_END -> {
+                // TODO: make sure this is correct
+                // should be FOLLOW(Statement) = FOLLOW(Block) union {END} since Statement only
                 // occurs in <block> and block only occurs in <block>(precedure, followed by
                 // semi) and <program>(followed by dot).
                 // Then FOLLOW(block) = {DOT, SEMI}
@@ -262,42 +274,100 @@ public class ParserImp implements IParser {
         return statement;
     }
 
-    private Statement statementWhile() {
-        // TODO
-        assert false;
-        return null;
+    /**
+     * BEGIN <statement> ( ; <statement> )* END
+     * StatementBlock(List<Statement>)
+     * 
+     * @return
+     * @throws PLPException
+     */
+    private StatementBlock statementBlock() throws PLPException {
+        IToken firstToken = this.nextToken;
+        List<Statement> statements = new ArrayList<>();
+        this.match(Kind.KW_BEGIN);
+        Statement statement = this.statement();
+        statements.add(statement);
+        while (this.nextToken.getKind() == Kind.SEMI) {
+            this.match(Kind.SEMI);
+            statement = this.statement();
+            statements.add(statement);
+        }
+        this.match(Kind.KW_END);
+
+        return new StatementBlock(firstToken, statements);
     }
 
-    private Statement statementIf() {
-        // TODO
-        assert false;
-        return null;
+    private StatementWhile statementWhile() throws PLPException {
+        IToken firstToken = this.nextToken;
+        this.match(Kind.KW_WHILE);
+        Expression expression = this.expression();
+        this.match(Kind.KW_DO);
+        Statement statement = this.statement();
+        return new StatementWhile(firstToken, expression, statement);
     }
 
-    private Statement statementOutput() {
-        // TODO
-        assert false;
-        return null;
+    /**
+     * IF <expression> THEN <statement>
+     * StatementIf(Expression, Statement)
+     * 
+     * @return
+     * @throws PLPException
+     */
+    private StatementIf statementIf() throws PLPException {
+        IToken firstToken = this.nextToken;
+        this.match(Kind.KW_IF);
+        Expression expression = this.expression();
+        this.match(Kind.KW_THEN);
+        Statement statement = this.statement();
+        return new StatementIf(firstToken, expression, statement);
     }
 
-    private Statement statementInput() {
-        // TODO
-        assert false;
-        return null;
+    /**
+     * ! <expression> StatementOutput(Expression)
+     * 
+     * @return
+     * @throws PLPException
+     */
+    private StatementOutput statementOutput() throws PLPException {
+        IToken firstToken = this.nextToken;
+        this.match(Kind.BANG);
+        Expression expression = this.expression();
+        return new StatementOutput(firstToken, expression);
     }
 
-    private Statement statementCall() {
-        // TODO
-        assert false;
-        return null;
+    /**
+     * ? <ident> StatementInput(Ident)
+     * 
+     * @return
+     * @throws PLPException
+     */
+    private StatementInput statementInput() throws PLPException {
+        IToken firstToken = this.nextToken;
+        this.match(Kind.QUESTION);
+        IToken ident = this.match(Kind.IDENT);
+        return new StatementInput(firstToken, new Ident(ident));
+    }
+
+    /**
+     * CALL <ident> StatementCall(Ident)
+     * 
+     * @return
+     * @throws PLPException
+     */
+    private StatementCall statementCall() throws PLPException {
+        IToken firstToken = this.nextToken;
+        this.match(Kind.KW_CALL);
+        IToken ident = this.match(Kind.IDENT);
+        return new StatementCall(firstToken, new Ident(ident));
     }
 
     /**
      * <ident> := <expression> StatementAssign(Ident,Expression)
      * 
      * @return
+     * @throws PLPException
      */
-    private Statement statementAssign() throws PLPException {
+    private StatementAssign statementAssign() throws PLPException {
         IToken firstToken = this.nextToken;
         IToken ident = this.match(Kind.IDENT);
         this.match(Kind.ASSIGN);
@@ -325,23 +395,23 @@ public class ParserImp implements IParser {
      */
     private Expression constVal() throws PLPException {
         Expression constVal;
-        IToken firsToken = this.nextToken;
+        IToken firstToken = this.nextToken;
         switch (this.nextToken.getKind()) {
             case NUM_LIT -> {
                 this.match(Kind.NUM_LIT);
-                constVal = new ExpressionNumLit(firsToken);
+                constVal = new ExpressionNumLit(firstToken);
             }
             case STRING_LIT -> {
                 this.match(Kind.STRING_LIT);
-                constVal = new ExpressionStringLit(firsToken);
+                constVal = new ExpressionStringLit(firstToken);
             }
             case BOOLEAN_LIT -> {
                 this.match(Kind.BOOLEAN_LIT);
-                constVal = new ExpressionBooleanLit(firsToken);
+                constVal = new ExpressionBooleanLit(firstToken);
             }
             default -> {
-                throw new SyntaxException("unsupported const type", firsToken.getSourceLocation().line(),
-                        firsToken.getSourceLocation().column());
+                throw new SyntaxException("unsupported const type", firstToken.getSourceLocation().line(),
+                        firstToken.getSourceLocation().column());
             }
         }
         return constVal;
