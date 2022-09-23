@@ -39,7 +39,7 @@ class ParserTest {
 	}
 
 	@Test
-//shortest legal program
+	// shortest legal program
 	void test0() throws PLPException {
 		String input = """
 				.""";
@@ -634,7 +634,7 @@ class ParserTest {
 	}
 
 	@Test
-//The error in this example should be found by the Lexer
+	// The error in this example should be found by the Lexer
 	void test15() throws PLPException {
 		String input = """
 				VAR @;
@@ -646,4 +646,16 @@ class ParserTest {
 		});
 	}
 
+	@Test
+	void testProcedure() throws PLPException {
+		String input = """
+				VAR haha, cnm;
+				PROCEDURE hello;
+					CONST abc = "123";
+				;
+				.
+				""";
+		ASTNode ast = getAST(input);
+		assertThat("", ast, instanceOf(Program.class));
+	}
 }
