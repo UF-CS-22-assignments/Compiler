@@ -11,9 +11,11 @@ import edu.ufl.cise.plpfa22.ast.Expression;
 import edu.ufl.cise.plpfa22.ast.ExpressionBooleanLit;
 import edu.ufl.cise.plpfa22.ast.ExpressionNumLit;
 import edu.ufl.cise.plpfa22.ast.ExpressionStringLit;
+import edu.ufl.cise.plpfa22.ast.Ident;
 import edu.ufl.cise.plpfa22.ast.ProcDec;
 import edu.ufl.cise.plpfa22.ast.Program;
 import edu.ufl.cise.plpfa22.ast.Statement;
+import edu.ufl.cise.plpfa22.ast.StatementAssign;
 import edu.ufl.cise.plpfa22.ast.StatementEmpty;
 import edu.ufl.cise.plpfa22.ast.VarDec;
 
@@ -247,7 +249,9 @@ public class ParserImp implements IParser {
             }
             case DOT, SEMI -> {
                 // should be FOLLOW(Statement) = FOLLOW(Block) since Statement only
-                // occurs in <block>. Then FOLLOW(block) = {DOT, SEMI}
+                // occurs in <block> and block only occurs in <block>(precedure, followed by
+                // semi) and <program>(followed by dot).
+                // Then FOLLOW(block) = {DOT, SEMI}
                 statement = new StatementEmpty(firstToken);
             }
             default -> {
@@ -260,31 +264,52 @@ public class ParserImp implements IParser {
 
     private Statement statementWhile() {
         // TODO
+        assert false;
         return null;
     }
 
     private Statement statementIf() {
         // TODO
+        assert false;
         return null;
     }
 
     private Statement statementOutput() {
         // TODO
+        assert false;
         return null;
     }
 
     private Statement statementInput() {
         // TODO
+        assert false;
         return null;
     }
 
     private Statement statementCall() {
         // TODO
+        assert false;
         return null;
     }
 
-    private Statement statementAssign() {
+    /**
+     * <ident> := <expression> StatementAssign(Ident,Expression)
+     * 
+     * @return
+     */
+    private Statement statementAssign() throws PLPException {
+        IToken firstToken = this.nextToken;
+        IToken ident = this.match(Kind.IDENT);
+        this.match(Kind.ASSIGN);
+        Expression expression = this.expression();
+        // In the StatementAssign, the ident is a Ident type(ASTNode), not an IToken
+        // type. It's sepcified in Slack by the teacher.
+        return new StatementAssign(firstToken, new Ident(ident), expression);
+    }
+
+    private Expression expression() {
         // TODO
+        assert false;
         return null;
     }
 
