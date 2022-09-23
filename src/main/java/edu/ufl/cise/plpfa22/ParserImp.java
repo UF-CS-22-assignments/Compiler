@@ -1,6 +1,5 @@
 package edu.ufl.cise.plpfa22;
 
-import java.nio.file.FileStore;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -88,6 +87,7 @@ public class ParserImp implements IParser {
     }
 
     private Block block() throws PLPException {
+        // TODO: procDec and statement
         IToken firstToken = this.nextToken;
         List<ConstDec> constDecs = new ArrayList<>();
         List<VarDec> varDecs = new ArrayList<>();
@@ -98,7 +98,7 @@ public class ParserImp implements IParser {
         }
 
         while (this.isKind(this.nextToken, Kind.KW_VAR)) {
-            varDecs.add(this.varDec());
+            varDecs.addAll(this.varDecList());
         }
 
         while (this.isKind(this.nextToken, Kind.KW_PROCEDURE)) {
@@ -110,7 +110,7 @@ public class ParserImp implements IParser {
     }
 
     /**
-     * (CONST <ident> = <const_val> ( , <ident> = <const_val> )* ; )*
+     * CONST <ident> = <const_val> ( , <ident> = <const_val> )* ;
      * List<ConstDec>
      * 
      * @return a list of ConstDec
@@ -143,6 +143,28 @@ public class ParserImp implements IParser {
     }
 
     /**
+     * VAR <ident> ( , <ident> )* ) ;
+     */
+    private List<VarDec> varDecList() throws PLPException {
+        IToken firstToken = this.nextToken;
+        List<VarDec> varDecs = new ArrayList<>();
+
+        this.match(Kind.KW_VAR);
+        IToken ident = this.match(Kind.IDENT);
+        varDecs.add(new VarDec(firstToken, ident));
+
+        while (this.isKind(this.nextToken, Kind.COMMA)) {
+            firstToken = this.nextToken;
+            this.match(Kind.COMMA);
+            ident = this.match(Kind.IDENT);
+            varDecs.add(new VarDec(firstToken, ident));
+        }
+        this.match(Kind.SEMI);
+
+        return varDecs;
+    }
+
+    /**
      * get the const value of a const expression(the value of a <const_val>). For
      * example, passing an ExpressionNumLit should return an Integer type.
      * 
@@ -167,11 +189,6 @@ public class ParserImp implements IParser {
                         litToken.getSourceLocation().column());
             }
         }
-    }
-
-    private VarDec varDec() throws PLPException {
-        // TODO
-        return new VarDec(this.nextToken, null);
     }
 
     private ProcDec procDec() throws PLPException {
