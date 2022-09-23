@@ -87,7 +87,6 @@ public class ParserImp implements IParser {
     }
 
     private Block block() throws PLPException {
-        // TODO: statement
         IToken firstToken = this.nextToken;
         List<ConstDec> constDecs = new ArrayList<>();
         List<VarDec> varDecs = new ArrayList<>();
@@ -208,9 +207,85 @@ public class ParserImp implements IParser {
         return new ProcDec(firstToken, ident, block);
     }
 
+    /**
+     * <ident> := <expression> StatementAssign(Ident,Expression)
+     * | CALL <ident> StatementCall(Ident)
+     * | ? <ident> StatementInput(Ident)
+     * | ! <expression> StatementOutput(Expression)
+     * | BEGIN <statement> ( ; <statement> )* END
+     * StatementBlock(List<Statement>)
+     * | IF <expression> THEN <statement>
+     * StatementIf(Expression, Statement)
+     * | WHILE <expression> DO <statement>
+     * StatementWhile(Expression, Statement)
+     * | ε StatementEmpty
+     * 
+     * @return
+     * @throws PLPException
+     */
     private Statement statement() throws PLPException {
+        IToken firstToken = this.nextToken;
+        Statement statement;
+        switch (this.nextToken.getKind()) {
+            case IDENT -> {
+                statement = this.statementAssign();
+            }
+            case KW_CALL -> {
+                statement = this.statementCall();
+            }
+            case QUESTION -> {
+                statement = this.statementInput();
+            }
+            case BANG -> {
+                statement = this.statementOutput();
+            }
+            case KW_IF -> {
+                statement = this.statementIf();
+            }
+            case KW_WHILE -> {
+                statement = this.statementWhile();
+            }
+            case DOT, SEMI -> {
+                // should be FOLLOW(Statement) = FOLLOW(Block) since Statement only
+                // occurs in <block>. Then FOLLOW(block) = {DOT, SEMI}
+                statement = new StatementEmpty(firstToken);
+            }
+            default -> {
+                throw new SyntaxException("error parsing Statement, illegal token",
+                        this.nextToken.getSourceLocation().line(), this.nextToken.getSourceLocation().column());
+            }
+        }
+        return statement;
+    }
+
+    private Statement statementWhile() {
         // TODO
-        return new StatementEmpty(this.nextToken);
+        return null;
+    }
+
+    private Statement statementIf() {
+        // TODO
+        return null;
+    }
+
+    private Statement statementOutput() {
+        // TODO
+        return null;
+    }
+
+    private Statement statementInput() {
+        // TODO
+        return null;
+    }
+
+    private Statement statementCall() {
+        // TODO
+        return null;
+    }
+
+    private Statement statementAssign() {
+        // TODO
+        return null;
     }
 
     /**
