@@ -87,7 +87,7 @@ public class ParserImp implements IParser {
     }
 
     private Block block() throws PLPException {
-        // TODO: procDec and statement
+        // TODO: statement
         IToken firstToken = this.nextToken;
         List<ConstDec> constDecs = new ArrayList<>();
         List<VarDec> varDecs = new ArrayList<>();
@@ -191,9 +191,21 @@ public class ParserImp implements IParser {
         }
     }
 
+    /**
+     * PROCEDURE <ident> ; <block> ;
+     * get a procedure.
+     * 
+     * @return
+     * @throws PLPException
+     */
     private ProcDec procDec() throws PLPException {
-        // TODO
-        return new ProcDec(this.nextToken, null, null);
+        IToken firstToken = this.nextToken;
+        this.match(Kind.KW_PROCEDURE);
+        IToken ident = this.match(Kind.IDENT);
+        this.match(Kind.SEMI);
+        Block block = this.block();
+        this.match(Kind.SEMI);
+        return new ProcDec(firstToken, ident, block);
     }
 
     private Statement statement() throws PLPException {
