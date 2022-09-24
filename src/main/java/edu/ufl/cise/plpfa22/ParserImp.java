@@ -4,27 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import edu.ufl.cise.plpfa22.IToken.Kind;
-import edu.ufl.cise.plpfa22.ast.ASTNode;
-import edu.ufl.cise.plpfa22.ast.Block;
-import edu.ufl.cise.plpfa22.ast.ConstDec;
-import edu.ufl.cise.plpfa22.ast.Expression;
-import edu.ufl.cise.plpfa22.ast.ExpressionBinary;
-import edu.ufl.cise.plpfa22.ast.ExpressionBooleanLit;
-import edu.ufl.cise.plpfa22.ast.ExpressionNumLit;
-import edu.ufl.cise.plpfa22.ast.ExpressionStringLit;
-import edu.ufl.cise.plpfa22.ast.Ident;
-import edu.ufl.cise.plpfa22.ast.ProcDec;
-import edu.ufl.cise.plpfa22.ast.Program;
-import edu.ufl.cise.plpfa22.ast.Statement;
-import edu.ufl.cise.plpfa22.ast.StatementAssign;
-import edu.ufl.cise.plpfa22.ast.StatementBlock;
-import edu.ufl.cise.plpfa22.ast.StatementCall;
-import edu.ufl.cise.plpfa22.ast.StatementEmpty;
-import edu.ufl.cise.plpfa22.ast.StatementIf;
-import edu.ufl.cise.plpfa22.ast.StatementInput;
-import edu.ufl.cise.plpfa22.ast.StatementOutput;
-import edu.ufl.cise.plpfa22.ast.StatementWhile;
-import edu.ufl.cise.plpfa22.ast.VarDec;
+import edu.ufl.cise.plpfa22.ast.*;
 
 public class ParserImp implements IParser {
     private final ILexer lexer;
@@ -380,8 +360,8 @@ public class ParserImp implements IParser {
         IToken firstToken = this.nextToken;
         Expression leftExpression = this.additiveExpression();
         Kind nextTokenKind = this.nextToken.getKind();
-        while (nextTokenKind != Kind.LT && nextTokenKind != Kind.GT && nextTokenKind != Kind.EQ
-                && nextTokenKind != Kind.NEQ && nextTokenKind != Kind.LE && nextTokenKind != Kind.GE) {
+        while (nextTokenKind == Kind.LT || nextTokenKind == Kind.GT || nextTokenKind == Kind.EQ
+                || nextTokenKind == Kind.NEQ || nextTokenKind == Kind.LE || nextTokenKind == Kind.GE) {
             // consume whatever token if it has the above type
             IToken op = this.consume();
             leftExpression = new ExpressionBinary(firstToken, leftExpression, op, this.additiveExpression());
@@ -391,12 +371,53 @@ public class ParserImp implements IParser {
         return leftExpression;
     }
 
-    private Expression additiveExpression() {
+    private Expression additiveExpression() throws PLPException{
         // TODO
-        assert false;
-        return null;
+        IToken firstToken = this.nextToken;
+        Expression leftExpression = this.multiplicativeExpression();
+        Kind nextTokenKind = this.nextToken.getKind();
+        while(nextTokenKind == Kind.PLUS || nextTokenKind == Kind.MINUS){
+            IToken op = this.consume();
+            leftExpression = new ExpressionBinary(firstToken, leftExpression, op, this.multiplicativeExpression());
+            nextTokenKind = this.nextToken.getKind();
+        }
+        return leftExpression;
     }
 
+    private Expression multiplicativeExpression() throws PLPException{
+        // TODO
+        IToken firstToken = this.nextToken;
+        Expression leftExpression = this.primaryExpression();
+        Kind nextTokenKind = this.nextToken.getKind();
+        while(nextTokenKind == Kind.TIMES || nextTokenKind == Kind.DIV || nextTokenKind == Kind.MOD){
+            IToken op = this.consume();
+            leftExpression = new ExpressionBinary(firstToken, leftExpression, op, this.primaryExpression());
+            nextTokenKind = this.nextToken.getKind();
+        }
+        return leftExpression;
+    }
+    private Expression primaryExpression() throws PLPException{
+        IToken firstToken = this.nextToken;
+        Expression expression;
+        switch (this.nextToken.getKind()) {
+            case IDENT -> {
+                expression = new ExpressionIdent(firstToken);
+            }
+            case LPAREN -> {
+                this.match(Kind.LPAREN);
+                expression = this.expression();
+                this.match((Kind.RPAREN));
+            }
+            default -> {
+                try{
+                    expression = this.constVal();
+                }catch (SyntaxException se){
+                    throw se;
+                }
+            }
+        }
+        return expression;
+    }
     /**
      * <const_val> non-terminal, return an Expression type.
      * 
@@ -428,6 +449,7 @@ public class ParserImp implements IParser {
                         firstToken.getSourceLocation().column());
             }
         }
+
         return constVal;
     }
 
