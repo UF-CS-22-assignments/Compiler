@@ -401,6 +401,7 @@ public class ParserImp implements IParser {
         Expression expression;
         switch (this.nextToken.getKind()) {
             case IDENT -> {
+                this.consume();
                 expression = new ExpressionIdent(firstToken);
             }
             case LPAREN -> {
