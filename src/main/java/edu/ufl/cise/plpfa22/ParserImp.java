@@ -372,7 +372,6 @@ public class ParserImp implements IParser {
     }
 
     private Expression additiveExpression() throws PLPException{
-        // TODO
         IToken firstToken = this.nextToken;
         Expression leftExpression = this.multiplicativeExpression();
         Kind nextTokenKind = this.nextToken.getKind();
@@ -385,7 +384,6 @@ public class ParserImp implements IParser {
     }
 
     private Expression multiplicativeExpression() throws PLPException{
-        // TODO
         IToken firstToken = this.nextToken;
         Expression leftExpression = this.primaryExpression();
         Kind nextTokenKind = this.nextToken.getKind();
@@ -410,11 +408,7 @@ public class ParserImp implements IParser {
                 this.match((Kind.RPAREN));
             }
             default -> {
-                try{
-                    expression = this.constVal();
-                }catch (SyntaxException se){
-                    throw se;
-                }
+                expression = this.constVal();
             }
         }
         return expression;
