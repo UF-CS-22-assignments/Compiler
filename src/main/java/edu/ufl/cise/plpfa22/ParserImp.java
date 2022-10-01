@@ -41,7 +41,9 @@ public class ParserImp implements IParser {
         // want to throw the lexical exception before parse() is invoked.
         this.nextToken = this.lexer.next();
 
-        return this.program();
+        Program program = this.program();
+        this.match(Kind.EOF);
+        return program;
     }
 
     /**

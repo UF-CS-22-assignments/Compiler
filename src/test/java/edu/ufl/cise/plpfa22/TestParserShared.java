@@ -197,6 +197,18 @@ class TestParserShared {
     }
 
     @Test
+    void InvalidEndChar() throws PLPException {
+        String input = """
+                VAR abc;
+                . bruh
+                """;
+        assertThrows(SyntaxException.class, () -> {
+            @SuppressWarnings("unused")
+            ASTNode ast = getAST(input);
+        });
+    }
+
+    @Test
     // Test the expression with parenthesis
     void shr_test1() throws PLPException {
         String input = """
