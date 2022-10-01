@@ -63,7 +63,6 @@ public class ParserImp implements IParser {
 
     /**
      * return the next token and let the lexer moves forward by one token.
-     * TODO: not sure if it's necessary to encapsulate this method.
      * 
      * @return
      * @throws PLPException raise an exception if there's a lexical error
@@ -259,7 +258,6 @@ public class ParserImp implements IParser {
                 statement = this.statementWhile();
             }
             case DOT, SEMI, KW_END -> {
-                // TODO: make sure this is correct
                 // should be FOLLOW(Statement) = FOLLOW(Block) union {END} since Statement only
                 // occurs in <block> and block only occurs in <block>(precedure, followed by
                 // semi) and <program>(followed by dot).
@@ -392,11 +390,11 @@ public class ParserImp implements IParser {
         return leftExpression;
     }
 
-    private Expression additiveExpression() throws PLPException{
+    private Expression additiveExpression() throws PLPException {
         IToken firstToken = this.nextToken;
         Expression leftExpression = this.multiplicativeExpression();
         Kind nextTokenKind = this.nextToken.getKind();
-        while(nextTokenKind == Kind.PLUS || nextTokenKind == Kind.MINUS){
+        while (nextTokenKind == Kind.PLUS || nextTokenKind == Kind.MINUS) {
             IToken op = this.consume();
             leftExpression = new ExpressionBinary(firstToken, leftExpression, op, this.multiplicativeExpression());
             nextTokenKind = this.nextToken.getKind();
@@ -404,18 +402,19 @@ public class ParserImp implements IParser {
         return leftExpression;
     }
 
-    private Expression multiplicativeExpression() throws PLPException{
+    private Expression multiplicativeExpression() throws PLPException {
         IToken firstToken = this.nextToken;
         Expression leftExpression = this.primaryExpression();
         Kind nextTokenKind = this.nextToken.getKind();
-        while(nextTokenKind == Kind.TIMES || nextTokenKind == Kind.DIV || nextTokenKind == Kind.MOD){
+        while (nextTokenKind == Kind.TIMES || nextTokenKind == Kind.DIV || nextTokenKind == Kind.MOD) {
             IToken op = this.consume();
             leftExpression = new ExpressionBinary(firstToken, leftExpression, op, this.primaryExpression());
             nextTokenKind = this.nextToken.getKind();
         }
         return leftExpression;
     }
-    private Expression primaryExpression() throws PLPException{
+
+    private Expression primaryExpression() throws PLPException {
         IToken firstToken = this.nextToken;
         Expression expression;
         switch (this.nextToken.getKind()) {
@@ -434,6 +433,7 @@ public class ParserImp implements IParser {
         }
         return expression;
     }
+
     /**
      * <const_val> non-terminal, return an Expression type.
      * 
