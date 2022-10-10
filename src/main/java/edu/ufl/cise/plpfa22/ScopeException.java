@@ -12,10 +12,6 @@ public class ScopeException extends PLPException {
 		super(error_message, line, column);
 	}
 
-	public ScopeException(String error_message, SourceLocation loc) {
-		super(error_message, loc);
-	}
-
 	public ScopeException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
 		super(message, cause, enableSuppression, writableStackTrace);
 	}

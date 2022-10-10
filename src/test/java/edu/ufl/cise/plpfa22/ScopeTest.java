@@ -28,12 +28,11 @@ import edu.ufl.cise.plpfa22.ast.StatementOutput;
 import edu.ufl.cise.plpfa22.ast.VarDec;
 
 class ScopeTest {
-	
+
 	ASTNode getDecoratedAST(String input) throws PLPException {
 		IParser parser = CompilerComponentFactory.getParser(CompilerComponentFactory.getLexer(input));
 		ASTNode ast = parser.parse();
 		ASTVisitor scopes = CompilerComponentFactory.getScopeVisitor();
-		CompilerComponentFactory.getScopeVisitor();
 		ast.visit(scopes, null);
 		return ast;
 	}
