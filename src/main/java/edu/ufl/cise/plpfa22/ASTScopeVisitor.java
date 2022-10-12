@@ -16,6 +16,7 @@ import edu.ufl.cise.plpfa22.ast.ExpressionStringLit;
 import edu.ufl.cise.plpfa22.ast.Ident;
 import edu.ufl.cise.plpfa22.ast.ProcDec;
 import edu.ufl.cise.plpfa22.ast.Program;
+import edu.ufl.cise.plpfa22.ast.Statement;
 import edu.ufl.cise.plpfa22.ast.StatementAssign;
 import edu.ufl.cise.plpfa22.ast.StatementBlock;
 import edu.ufl.cise.plpfa22.ast.StatementCall;
@@ -38,9 +39,11 @@ public class ASTScopeVisitor implements ASTVisitor {
 
     private class SymboltableAttribute {
         Declaration dec;
+        int nestingLevel;
 
-        public SymboltableAttribute(Declaration dec) {
+        public SymboltableAttribute(Declaration dec, int nestingLevel) {
             this.dec = dec;
+            this.nestingLevel = nestingLevel;
         }
     }
 
@@ -75,11 +78,11 @@ public class ASTScopeVisitor implements ASTVisitor {
                         ident.getSourceLocation().line(),
                         ident.getSourceLocation().column());
             } else {
-                identMap.put(this.getCurrentScopeId(), new SymboltableAttribute(dec));
+                identMap.put(this.getCurrentScopeId(), new SymboltableAttribute(dec, this.nestingLevel));
             }
         } else {
             HashMap<Integer, SymboltableAttribute> identMap = new HashMap<>();
-            identMap.put(this.getCurrentScopeId(), new SymboltableAttribute(dec));
+            identMap.put(this.getCurrentScopeId(), new SymboltableAttribute(dec, this.nestingLevel));
             this.symbolTable.put(name, identMap);
         }
 
@@ -213,7 +216,11 @@ public class ASTScopeVisitor implements ASTVisitor {
 
     @Override
     public Object visitStatementInput(StatementInput statementInput, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
+        if ((boolean) arg) {
+            // since the ident in an input statement should be an ident of a non-procedure,
+            // then process it only in the first pass
+            statementInput.ident.visit(this, arg);
+        }
         return null;
     }
 
@@ -225,8 +232,12 @@ public class ASTScopeVisitor implements ASTVisitor {
 
     @Override
     public Object visitStatementBlock(StatementBlock statementBlock, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        this.enterScope();
+        for (Statement statement : statementBlock.statements) {
+            statement.visit(this, arg);
+        }
+        this.closeScope();
+        return null;
     }
 
     @Override
@@ -256,9 +267,9 @@ public class ASTScopeVisitor implements ASTVisitor {
         IToken ident = expressionIdent.firstToken;
         String identName = new String(ident.getText());
         try {
-            Declaration dec = this.getIdentAttribute(identName).dec;
-            expressionIdent.setDec(dec);
-            expressionIdent.setNest(this.nestingLevel);
+            SymboltableAttribute identAttribute = this.getIdentAttribute(identName);
+            expressionIdent.setDec(identAttribute.dec);
+            expressionIdent.setNest(identAttribute.nestingLevel);
         } catch (ScopeException scopeException) {
             // decorate the exception with the location of the ident token.
             throw new ScopeException(
@@ -311,9 +322,19 @@ public class ASTScopeVisitor implements ASTVisitor {
 
     @Override
     public Object visitIdent(Ident ident, Object arg) throws PLPException {
-        // maybe: boolean[] haha = (boolean[]) arg;
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        IToken identToken = ident.firstToken;
+        try {
+            SymboltableAttribute identAttribute = this.getIdentAttribute(new String(identToken.getText()));
+            ident.setDec(identAttribute.dec);
+            ident.setNest(identAttribute.nestingLevel);
+        } catch (ScopeException e) {
+            throw new ScopeException(
+                    e.getMessage(),
+                    identToken.getSourceLocation().line(),
+                    identToken.getSourceLocation().column());
+        }
+
+        return null;
     }
 
 }
