@@ -210,8 +210,11 @@ public class ASTScopeVisitor implements ASTVisitor {
 
     @Override
     public Object visitStatementCall(StatementCall statementCall, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        if (!(boolean) arg) {
+            // since this ident is a procedure, only visit it in the second pass.
+            statementCall.ident.visit(this, arg);
+        }
+        return null;
     }
 
     @Override
