@@ -1,8 +1,8 @@
 package edu.ufl.cise.plpfa22;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
-
-import java.util.Stack;
 
 import edu.ufl.cise.plpfa22.ast.ASTVisitor;
 import edu.ufl.cise.plpfa22.ast.Block;
@@ -38,15 +38,53 @@ public class ASTScopeVisitor implements ASTVisitor {
 
     private class attribute {
         Declaration dec;
+
+        public attribute(Declaration dec) {
+            this.dec = dec;
+        }
     }
 
     // ident name string as key, list of ident with that same name as value.
     // TODO: what type should be stored in the List?
-    private HashMap<String, HashMap<Integer, attribute>> symbolTable;
+    private HashMap<String, HashMap<Integer, attribute>> symbolTable = new HashMap<>();
 
     // store the scope nesting structure, by storing the scope IDs.
     // the top of the stack represents the ID of the current scope
-    private Stack<Integer> scopeStack;
+    // replace stack by deque for better performance.
+    private Deque<Integer> scopeStack = new ArrayDeque<>();
+
+    private int getCurrentScopeId() {
+        return this.scopeStack.peek();
+    }
+
+    /**
+     * insert the current ident at the current scope and nesting level
+     * 
+     * @param ident the new ident
+     * @param dec   the declaration in which the ident is contained.
+     * @throws PLPException
+     */
+    private void insertIdent(IToken ident, Declaration dec) throws PLPException {
+        String name = new String(ident.getText());
+        if (this.symbolTable.containsKey(name)) {
+            // there's already an identifier in the symbol table with the same name, put if
+            // it has a different scope id, otherwise, throw an exception
+            HashMap<Integer, attribute> identMap = this.symbolTable.get(name);
+            if (identMap.containsKey(this.getCurrentScopeId())) {
+                throw new ScopeException(
+                        "re-declaration of identifier " + new String(ident.getText()),
+                        ident.getSourceLocation().line(),
+                        ident.getSourceLocation().column());
+            } else {
+                identMap.put(this.getCurrentScopeId(), new attribute(dec));
+            }
+        } else {
+            HashMap<Integer, attribute> identMap = new HashMap<>();
+            identMap.put(this.getCurrentScopeId(), new attribute(dec));
+            this.symbolTable.put(name, identMap);
+        }
+
+    }
 
     /**
      * entering a new scope
@@ -85,12 +123,31 @@ public class ASTScopeVisitor implements ASTVisitor {
      */
     @Override
     public Object visitBlock(Block block, Object arg) throws PLPException {
-        boolean isFirst = (Boolean) arg;
-        if (isFirst) {
+        boolean isFirst = (boolean) arg;
+        // start of the scope, call enterScope()
+        this.enterScope();
 
-        } else {
+        // call every visit() of the sub-nodes in the AST
+        if (isFirst) {
+            // const and var declaration will only be called at the first pass
+            for (ConstDec constDec : block.constDecs) {
+                constDec.visit(this, arg);
+            }
+
+            for (VarDec varDec : block.varDecs) {
+                varDec.visit(this, arg);
+            }
 
         }
+
+        for (ProcDec procDec : block.procedureDecs) {
+            procDec.visit(this, arg);
+        }
+
+        block.statement.visit(this, arg);
+
+        // end of the scope, call closeScope
+        this.closeScope();
         return null;
     }
 
@@ -112,7 +169,11 @@ public class ASTScopeVisitor implements ASTVisitor {
 
     @Override
     public Object visitVarDec(VarDec varDec, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
+        if (!(boolean) arg) {
+            // for the second pass, do nothing.
+            return null;
+        }
+        this.insertIdent(varDec.ident, varDec);
         return null;
     }
 
@@ -190,7 +251,11 @@ public class ASTScopeVisitor implements ASTVisitor {
 
     @Override
     public Object visitConstDec(ConstDec constDec, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
+        if (!(boolean) arg) {
+            // for the second pass, do nothing.
+            return null;
+        }
+        this.insertIdent(constDec.ident, constDec);
         return null;
     }
 
