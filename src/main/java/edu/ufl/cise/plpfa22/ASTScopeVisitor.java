@@ -164,7 +164,7 @@ public class ASTScopeVisitor implements ASTVisitor {
     @Override
     public Object visitStatementAssign(StatementAssign statementAssign, Object arg) throws PLPException {
         // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedException();
     }
 
     @Override
@@ -180,7 +180,7 @@ public class ASTScopeVisitor implements ASTVisitor {
     @Override
     public Object visitStatementCall(StatementCall statementCall, Object arg) throws PLPException {
         // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedException();
     }
 
     @Override
@@ -192,61 +192,61 @@ public class ASTScopeVisitor implements ASTVisitor {
     @Override
     public Object visitStatementOutput(StatementOutput statementOutput, Object arg) throws PLPException {
         // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedException();
     }
 
     @Override
     public Object visitStatementBlock(StatementBlock statementBlock, Object arg) throws PLPException {
         // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedException();
     }
 
     @Override
     public Object visitStatementIf(StatementIf statementIf, Object arg) throws PLPException {
         // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedException();
     }
 
     @Override
     public Object visitStatementWhile(StatementWhile statementWhile, Object arg) throws PLPException {
         // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedException();
     }
 
     @Override
     public Object visitExpressionBinary(ExpressionBinary expressionBinary, Object arg) throws PLPException {
         // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedException();
     }
 
     @Override
     public Object visitExpressionIdent(ExpressionIdent expressionIdent, Object arg) throws PLPException {
         // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedException();
     }
 
     @Override
     public Object visitExpressionNumLit(ExpressionNumLit expressionNumLit, Object arg) throws PLPException {
         // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedException();
     }
 
     @Override
     public Object visitExpressionStringLit(ExpressionStringLit expressionStringLit, Object arg) throws PLPException {
         // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedException();
     }
 
     @Override
     public Object visitExpressionBooleanLit(ExpressionBooleanLit expressionBooleanLit, Object arg) throws PLPException {
         // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedException();
     }
 
     @Override
     public Object visitProcedure(ProcDec procDec, Object arg) throws PLPException {
         // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedException();
     }
 
     @Override
@@ -262,14 +262,14 @@ public class ASTScopeVisitor implements ASTVisitor {
     @Override
     public Object visitStatementEmpty(StatementEmpty statementEmpty, Object arg) throws PLPException {
         // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedException();
     }
 
     @Override
     public Object visitIdent(Ident ident, Object arg) throws PLPException {
         // maybe: boolean[] haha = (boolean[]) arg;
         // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedException();
     }
 
 }
