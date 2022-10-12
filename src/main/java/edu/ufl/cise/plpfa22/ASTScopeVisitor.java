@@ -36,17 +36,16 @@ public class ASTScopeVisitor implements ASTVisitor {
     // top of the scopeStack
     private int nextScopeID = 0;
 
-    private class attribute {
+    private class SymboltableAttribute {
         Declaration dec;
 
-        public attribute(Declaration dec) {
+        public SymboltableAttribute(Declaration dec) {
             this.dec = dec;
         }
     }
 
     // ident name string as key, list of ident with that same name as value.
-    // TODO: what type should be stored in the List?
-    private HashMap<String, HashMap<Integer, attribute>> symbolTable = new HashMap<>();
+    private HashMap<String, HashMap<Integer, SymboltableAttribute>> symbolTable = new HashMap<>();
 
     // store the scope nesting structure, by storing the scope IDs.
     // the top of the stack represents the ID of the current scope
@@ -69,21 +68,46 @@ public class ASTScopeVisitor implements ASTVisitor {
         if (this.symbolTable.containsKey(name)) {
             // there's already an identifier in the symbol table with the same name, put if
             // it has a different scope id, otherwise, throw an exception
-            HashMap<Integer, attribute> identMap = this.symbolTable.get(name);
+            HashMap<Integer, SymboltableAttribute> identMap = this.symbolTable.get(name);
             if (identMap.containsKey(this.getCurrentScopeId())) {
                 throw new ScopeException(
                         "re-declaration of identifier " + new String(ident.getText()),
                         ident.getSourceLocation().line(),
                         ident.getSourceLocation().column());
             } else {
-                identMap.put(this.getCurrentScopeId(), new attribute(dec));
+                identMap.put(this.getCurrentScopeId(), new SymboltableAttribute(dec));
             }
         } else {
-            HashMap<Integer, attribute> identMap = new HashMap<>();
-            identMap.put(this.getCurrentScopeId(), new attribute(dec));
+            HashMap<Integer, SymboltableAttribute> identMap = new HashMap<>();
+            identMap.put(this.getCurrentScopeId(), new SymboltableAttribute(dec));
             this.symbolTable.put(name, identMap);
         }
 
+    }
+
+    /**
+     * return the symbol table attirbute for the ident.
+     * find the ident with scope id closest to the top of the stack.
+     * 
+     * @param identName
+     * @return SymboltableAttribute
+     * @throws ScopeException when can't find the ident at visible scopes
+     */
+    private SymboltableAttribute getIdentAttribute(String identName) throws ScopeException {
+        if (!this.symbolTable.containsKey(identName)) {
+            // the symbol table doesn't contain an ident with name identName.
+            throw new ScopeException("can't find ident \"" + identName + "\"");
+        }
+        HashMap<Integer, SymboltableAttribute> identMap = this.symbolTable.get(identName);
+        for (int scopeID : this.scopeStack) {
+            // find the ident with the closest scope id towards the top of the stack.
+            // since we use the deque as stack, push is equivalent to addFirst, thus we just
+            // iterate through the scopeStack(deque)
+            if (identMap.containsKey(scopeID)) {
+                return identMap.get(scopeID);
+            }
+        }
+        throw new ScopeException("can't find ident \"" + identName + "\"");
     }
 
     /**
@@ -157,6 +181,10 @@ public class ASTScopeVisitor implements ASTVisitor {
         program.block.visit(this, true);
 
         // 2nd pass, decorate the AST.
+        // reset the nestingLevel and nextScopeId so that each scope would be assigned
+        // the same scope ID.
+        this.nestingLevel = -1;
+        this.nextScopeID = 0;
         program.block.visit(this, false);
         return null;
     }
@@ -191,8 +219,8 @@ public class ASTScopeVisitor implements ASTVisitor {
 
     @Override
     public Object visitStatementOutput(StatementOutput statementOutput, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        statementOutput.expression.visit(this, arg);
+        return null;
     }
 
     @Override
@@ -221,8 +249,24 @@ public class ASTScopeVisitor implements ASTVisitor {
 
     @Override
     public Object visitExpressionIdent(ExpressionIdent expressionIdent, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        if (!(boolean) arg) {
+            // do nothing in the second pass.
+            return null;
+        }
+        IToken ident = expressionIdent.firstToken;
+        String identName = new String(ident.getText());
+        try {
+            Declaration dec = this.getIdentAttribute(identName).dec;
+            expressionIdent.setDec(dec);
+            expressionIdent.setNest(this.nestingLevel);
+        } catch (ScopeException scopeException) {
+            // decorate the exception with the location of the ident token.
+            throw new ScopeException(
+                    scopeException.getMessage(),
+                    ident.getSourceLocation().line(),
+                    ident.getSourceLocation().column());
+        }
+        return null;
     }
 
     @Override
