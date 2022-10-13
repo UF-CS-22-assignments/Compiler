@@ -39,11 +39,9 @@ public class ASTScopeVisitor implements ASTVisitor {
 
     private class SymboltableAttribute {
         Declaration dec;
-        int nestingLevel;
 
-        public SymboltableAttribute(Declaration dec, int nestingLevel) {
+        public SymboltableAttribute(Declaration dec) {
             this.dec = dec;
-            this.nestingLevel = nestingLevel;
         }
     }
 
@@ -78,11 +76,11 @@ public class ASTScopeVisitor implements ASTVisitor {
                         ident.getSourceLocation().line(),
                         ident.getSourceLocation().column());
             } else {
-                identMap.put(this.getCurrentScopeId(), new SymboltableAttribute(dec, this.nestingLevel));
+                identMap.put(this.getCurrentScopeId(), new SymboltableAttribute(dec));
             }
         } else {
             HashMap<Integer, SymboltableAttribute> identMap = new HashMap<>();
-            identMap.put(this.getCurrentScopeId(), new SymboltableAttribute(dec, this.nestingLevel));
+            identMap.put(this.getCurrentScopeId(), new SymboltableAttribute(dec));
             this.symbolTable.put(name, identMap);
         }
 
