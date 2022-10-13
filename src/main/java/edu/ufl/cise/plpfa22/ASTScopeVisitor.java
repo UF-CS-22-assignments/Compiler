@@ -246,7 +246,7 @@ public class ASTScopeVisitor implements ASTVisitor {
     @Override
     public Object visitStatementIf(StatementIf statementIf, Object arg) throws PLPException {
         // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        statementIf.expression.visit(this,arg);
     }
 
     @Override
