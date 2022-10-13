@@ -272,7 +272,7 @@ public class ASTScopeVisitor implements ASTVisitor {
         try {
             SymboltableAttribute identAttribute = this.getIdentAttribute(identName);
             expressionIdent.setDec(identAttribute.dec);
-            expressionIdent.setNest(identAttribute.nestingLevel);
+            expressionIdent.setNest(this.nestingLevel);
         } catch (ScopeException scopeException) {
             // decorate the exception with the location of the ident token.
             throw new ScopeException(
@@ -309,7 +309,7 @@ public class ASTScopeVisitor implements ASTVisitor {
         if((boolean) arg) {
             this.insertIdent(procDec.ident,procDec);
         }
-        this.visitBlock(procDec.block,arg);
+        procDec.block.visit(this, arg);
         return null;
     }
 
