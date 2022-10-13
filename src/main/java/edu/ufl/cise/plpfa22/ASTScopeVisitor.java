@@ -205,6 +205,7 @@ public class ASTScopeVisitor implements ASTVisitor {
             return null;
         }
         this.insertIdent(varDec.ident, varDec);
+        varDec.setNest(this.nestingLevel);
         return null;
     }
 
@@ -285,29 +286,25 @@ public class ASTScopeVisitor implements ASTVisitor {
 
     @Override
     public Object visitExpressionNumLit(ExpressionNumLit expressionNumLit, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        return null;
     }
 
     @Override
     public Object visitExpressionStringLit(ExpressionStringLit expressionStringLit, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        return null;
     }
 
     @Override
     public Object visitExpressionBooleanLit(ExpressionBooleanLit expressionBooleanLit, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        return null;
     }
 
     @Override
     public Object visitProcedure(ProcDec procDec, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-
-        //if first pass, insert ident into symbolTable
-        if((boolean) arg) {
-            this.insertIdent(procDec.ident,procDec);
+        // if first pass, insert ident into symbolTable
+        if ((boolean) arg) {
+            this.insertIdent(procDec.ident, procDec);
+            procDec.setNest(this.nestingLevel);
         }
         procDec.block.visit(this, arg);
         return null;
@@ -320,12 +317,12 @@ public class ASTScopeVisitor implements ASTVisitor {
             return null;
         }
         this.insertIdent(constDec.ident, constDec);
+        constDec.setNest(this.nestingLevel);
         return null;
     }
 
     @Override
     public Object visitStatementEmpty(StatementEmpty statementEmpty, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
         return null;
     }
 
