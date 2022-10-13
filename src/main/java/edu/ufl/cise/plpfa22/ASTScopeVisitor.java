@@ -194,8 +194,9 @@ public class ASTScopeVisitor implements ASTVisitor {
 
     @Override
     public Object visitStatementAssign(StatementAssign statementAssign, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        statementAssign.ident.visit(this,arg);
+        statementAssign.expression.visit(this,arg);
+        return null;
     }
 
     @Override
@@ -246,20 +247,24 @@ public class ASTScopeVisitor implements ASTVisitor {
 
     @Override
     public Object visitStatementIf(StatementIf statementIf, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
         statementIf.expression.visit(this,arg);
+        statementIf.statement.visit(this,arg);
+        return null;
     }
 
     @Override
     public Object visitStatementWhile(StatementWhile statementWhile, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        statementWhile.expression.visit(this,arg);
+        statementWhile.statement.visit(this,arg);
+        return null;
     }
 
     @Override
     public Object visitExpressionBinary(ExpressionBinary expressionBinary, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        expressionBinary.e0.visit(this,arg);
+        expressionBinary.e1.visit(this,arg);
+
+        return null;
     }
 
     @Override
