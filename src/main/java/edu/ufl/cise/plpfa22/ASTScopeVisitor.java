@@ -235,11 +235,11 @@ public class ASTScopeVisitor implements ASTVisitor {
 
     @Override
     public Object visitStatementBlock(StatementBlock statementBlock, Object arg) throws PLPException {
-        this.enterScope();
+
         for (Statement statement : statementBlock.statements) {
             statement.visit(this, arg);
         }
-        this.closeScope();
+
         return null;
     }
 
@@ -272,7 +272,7 @@ public class ASTScopeVisitor implements ASTVisitor {
         try {
             SymboltableAttribute identAttribute = this.getIdentAttribute(identName);
             expressionIdent.setDec(identAttribute.dec);
-            expressionIdent.setNest(identAttribute.nestingLevel);
+            expressionIdent.setNest(this.nestingLevel);
         } catch (ScopeException scopeException) {
             // decorate the exception with the location of the ident token.
             throw new ScopeException(
@@ -304,7 +304,13 @@ public class ASTScopeVisitor implements ASTVisitor {
     @Override
     public Object visitProcedure(ProcDec procDec, Object arg) throws PLPException {
         // TODO Auto-generated method stub
-        throw new UnsupportedException();
+
+        //if first pass, insert ident into symbolTable
+        if((boolean) arg) {
+            this.insertIdent(procDec.ident,procDec);
+        }
+        procDec.block.visit(this, arg);
+        return null;
     }
 
     @Override
@@ -320,7 +326,7 @@ public class ASTScopeVisitor implements ASTVisitor {
     @Override
     public Object visitStatementEmpty(StatementEmpty statementEmpty, Object arg) throws PLPException {
         // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        return null;
     }
 
     @Override
@@ -329,7 +335,7 @@ public class ASTScopeVisitor implements ASTVisitor {
         try {
             SymboltableAttribute identAttribute = this.getIdentAttribute(new String(identToken.getText()));
             ident.setDec(identAttribute.dec);
-            ident.setNest(identAttribute.nestingLevel);
+            ident.setNest(this.nestingLevel);
         } catch (ScopeException e) {
             throw new ScopeException(
                     e.getMessage(),
