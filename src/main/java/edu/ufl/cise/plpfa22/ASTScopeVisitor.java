@@ -194,8 +194,8 @@ public class ASTScopeVisitor implements ASTVisitor {
 
     @Override
     public Object visitStatementAssign(StatementAssign statementAssign, Object arg) throws PLPException {
-        statementAssign.ident.visit(this,arg);
-        statementAssign.expression.visit(this,arg);
+        statementAssign.ident.visit(this, arg);
+        statementAssign.expression.visit(this, arg);
         return null;
     }
 
@@ -247,23 +247,22 @@ public class ASTScopeVisitor implements ASTVisitor {
 
     @Override
     public Object visitStatementIf(StatementIf statementIf, Object arg) throws PLPException {
-        statementIf.expression.visit(this,arg);
-        statementIf.statement.visit(this,arg);
+        statementIf.expression.visit(this, arg);
+        statementIf.statement.visit(this, arg);
         return null;
     }
 
     @Override
     public Object visitStatementWhile(StatementWhile statementWhile, Object arg) throws PLPException {
-        statementWhile.expression.visit(this,arg);
-        statementWhile.statement.visit(this,arg);
+        statementWhile.expression.visit(this, arg);
+        statementWhile.statement.visit(this, arg);
         return null;
     }
 
     @Override
     public Object visitExpressionBinary(ExpressionBinary expressionBinary, Object arg) throws PLPException {
-        expressionBinary.e0.visit(this,arg);
-        expressionBinary.e1.visit(this,arg);
-
+        expressionBinary.e0.visit(this, arg);
+        expressionBinary.e1.visit(this, arg);
         return null;
     }
 
