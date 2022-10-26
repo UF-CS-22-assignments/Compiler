@@ -22,8 +22,7 @@ public class CompilerComponentFactory {
 	}
 
 	public static ASTVisitor getTypeInferenceVisitor() {
-		assert false;
-		return null;
+		return new ASTTypeVisitor();
 	}
 
 }
