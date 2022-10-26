@@ -3,6 +3,8 @@
  */
 package edu.ufl.cise.plpfa22;
 
+import edu.ufl.cise.plpfa22.IToken.SourceLocation;
+
 @SuppressWarnings("serial")
 public class PLPException extends Exception {
 
@@ -16,6 +18,10 @@ public class PLPException extends Exception {
 
 	public PLPException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
 		super(message, cause, enableSuppression, writableStackTrace);
+	}
+
+	public PLPException(String message, SourceLocation loc) {
+		super(loc.line() + ":" + loc.column() + "  " + message);
 	}
 
 	public PLPException(String message, Throwable cause) {
