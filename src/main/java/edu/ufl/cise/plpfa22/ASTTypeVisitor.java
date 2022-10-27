@@ -26,25 +26,40 @@ public class ASTTypeVisitor implements ASTVisitor {
 
     private boolean changed = true;
 
+    /**
+     * get the declaration type from an ident.
+     * 
+     * @param ident
+     * @return type of the declaration
+     * @throws TypeCheckException thrown if the type of the ident is not NUM_LIT,
+     *                            STRING_LIT or BOOLEAN_LIT
+     */
+    private Type getDecTypeByIdent(IToken ident) throws TypeCheckException {
+        switch (ident.getKind()) {
+            case NUM_LIT -> {
+                return Type.NUMBER;
+            }
+            case STRING_LIT -> {
+                return Type.STRING;
+            }
+            case BOOLEAN_LIT -> {
+                return Type.BOOLEAN;
+            }
+            case IDENT -> {
+                return Type.PROCEDURE;
+            }
+            default -> {
+                throw new TypeCheckException("wrong type for const declaration",
+                        ident.getSourceLocation());
+            }
+        }
+    }
+
     @Override
     public Object visitBlock(Block block, Object arg) throws PLPException {
         for (ConstDec constDec : block.constDecs) {
             if (constDec.getType() == null) {
-                switch (constDec.ident.getKind()) {
-                    case NUM_LIT -> {
-                        constDec.setType(Type.NUMBER);
-                    }
-                    case STRING_LIT -> {
-                        constDec.setType(Type.STRING);
-                    }
-                    case BOOLEAN_LIT -> {
-                        constDec.setType(Type.BOOLEAN);
-                    }
-                    default -> {
-                        throw new TypeCheckException("wrong type for const declaration",
-                                constDec.ident.getSourceLocation());
-                    }
-                }
+                constDec.setType(this.getDecTypeByIdent(constDec.ident));
             }
         }
         throw new UnsupportedException();
