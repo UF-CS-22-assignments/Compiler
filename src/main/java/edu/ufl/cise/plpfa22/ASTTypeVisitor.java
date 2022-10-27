@@ -20,19 +20,47 @@ import edu.ufl.cise.plpfa22.ast.StatementInput;
 import edu.ufl.cise.plpfa22.ast.StatementOutput;
 import edu.ufl.cise.plpfa22.ast.StatementWhile;
 import edu.ufl.cise.plpfa22.ast.VarDec;
+import edu.ufl.cise.plpfa22.ast.Types.Type;
 
 public class ASTTypeVisitor implements ASTVisitor {
 
+    private boolean changed = true;
+
     @Override
     public Object visitBlock(Block block, Object arg) throws PLPException {
-        // TODO
+        for (ConstDec constDec : block.constDecs) {
+            if (constDec.getType() == null) {
+                switch (constDec.ident.getKind()) {
+                    case NUM_LIT -> {
+                        constDec.setType(Type.NUMBER);
+                    }
+                    case STRING_LIT -> {
+                        constDec.setType(Type.STRING);
+                    }
+                    case BOOLEAN_LIT -> {
+                        constDec.setType(Type.BOOLEAN);
+                    }
+                    default -> {
+                        throw new TypeCheckException("wrong type for const declaration",
+                                constDec.ident.getSourceLocation());
+                    }
+                }
+            }
+        }
         throw new UnsupportedException();
     }
 
+    /* arg: if it's the typing visit. */
     @Override
     public Object visitProgram(Program program, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        // visit the children if anything is typed on the last visit.
+        do {
+            program.block.visit(this, true);
+        } while (this.changed);
+
+        // find untyped variables and raise exceptions.
+        program.block.visit(this, false);
+        return null;
     }
 
     @Override
