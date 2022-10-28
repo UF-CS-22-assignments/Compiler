@@ -1,8 +1,10 @@
 package edu.ufl.cise.plpfa22;
 
+import edu.ufl.cise.plpfa22.IToken.SourceLocation;
 import edu.ufl.cise.plpfa22.ast.ASTVisitor;
 import edu.ufl.cise.plpfa22.ast.Block;
 import edu.ufl.cise.plpfa22.ast.ConstDec;
+import edu.ufl.cise.plpfa22.ast.Expression;
 import edu.ufl.cise.plpfa22.ast.ExpressionBinary;
 import edu.ufl.cise.plpfa22.ast.ExpressionBooleanLit;
 import edu.ufl.cise.plpfa22.ast.ExpressionIdent;
@@ -24,7 +26,8 @@ import edu.ufl.cise.plpfa22.ast.Types.Type;
 
 public class ASTTypeVisitor implements ASTVisitor {
 
-    private boolean changed = true;
+    // if the AST changed in this pass (some node get it's type)
+    private boolean changed = false;
 
     /**
      * get the declaration type from an ident.
@@ -32,7 +35,7 @@ public class ASTTypeVisitor implements ASTVisitor {
      * @param ident
      * @return type of the declaration
      * @throws TypeCheckException thrown if the type of the ident is not NUM_LIT,
-     *                            STRING_LIT or BOOLEAN_LIT
+     *                            STRING_LIT, IDENT or BOOLEAN_LIT
      */
     private Type getDecTypeByIdent(IToken ident) throws TypeCheckException {
         switch (ident.getKind()) {
@@ -49,8 +52,7 @@ public class ASTTypeVisitor implements ASTVisitor {
                 return Type.PROCEDURE;
             }
             default -> {
-                throw new TypeCheckException("wrong type for const declaration",
-                        ident.getSourceLocation());
+                throw new TypeCheckException();
             }
         }
     }
@@ -59,10 +61,31 @@ public class ASTTypeVisitor implements ASTVisitor {
     public Object visitBlock(Block block, Object arg) throws PLPException {
         for (ConstDec constDec : block.constDecs) {
             if (constDec.getType() == null) {
-                constDec.setType(this.getDecTypeByIdent(constDec.ident));
+                this.changed = true;
+                try {
+                    Type type = this.getDecTypeByIdent(constDec.ident);
+                    if (type == Type.PROCEDURE) {
+                        // type error: declare procedure in const declaration.
+                        throw new TypeCheckException();
+                    } else {
+                        constDec.setType(type);
+                    }
+                } catch (TypeCheckException e) {
+                    throw new TypeCheckException("wrong type for const declaration",
+                            constDec.ident.getSourceLocation());
+                }
             }
         }
-        throw new UnsupportedException();
+
+        for (ProcDec procDec : block.procedureDecs) {
+            if (procDec.getType() == null) {
+                this.changed = true;
+                procDec.setType(Type.PROCEDURE);
+            }
+            procDec.block.visit(this, null);
+        }
+        block.statement.visit(this, null);
+        return null;
     }
 
     /* arg: if it's the typing visit. */
@@ -70,18 +93,27 @@ public class ASTTypeVisitor implements ASTVisitor {
     public Object visitProgram(Program program, Object arg) throws PLPException {
         // visit the children if anything is typed on the last visit.
         do {
-            program.block.visit(this, true);
+            this.changed = false;
+            program.block.visit(this, null);
         } while (this.changed);
 
-        // find untyped variables and raise exceptions.
-        program.block.visit(this, false);
         return null;
     }
 
     @Override
     public Object visitStatementAssign(StatementAssign statementAssign, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        Ident ident = statementAssign.ident;
+        Expression expression = statementAssign.expression;
+        if (ident.getDec().getType() == null && expression.getType() != null) {
+            ident.getDec().setType(expression.getType());
+        } else if (ident.getDec().getType() != null && expression.getType() == null) {
+            expression.visit(this, ident.getDec().getType());
+        } else if (ident.getDec().getType() != null && expression.getType() != null
+                && ident.getDec().getType() != expression.getType()) {
+            throw new TypeCheckException("variable type error", ident.getSourceLocation());
+        }
+        // else, the ident's type can't be determined, ignore it.
+        return null;
     }
 
     @Override
