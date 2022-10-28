@@ -186,8 +186,17 @@ public class ASTTypeVisitor implements ASTVisitor {
 
     @Override
     public Object visitStatementOutput(StatementOutput statementOutput, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        Expression expression = statementOutput.expression;
+        Type exprType = expression.getType();
+        if (exprType == null) {
+            return expression.visit(this, null);
+        } else {
+            if (exprType != Type.BOOLEAN && exprType != Type.NUMBER && exprType != Type.STRING) {
+                throw new TypeCheckException("output wrong type", expression.firstToken.getSourceLocation());
+            } else {
+                return expression.visit(this, null);
+            }
+        }
     }
 
     @Override
