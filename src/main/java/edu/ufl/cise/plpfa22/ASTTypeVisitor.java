@@ -34,11 +34,15 @@ public class ASTTypeVisitor implements ASTVisitor {
      * set the type of an expression and set this.change to true. Use this method to
      * avoid forget setting this.change.
      * 
-     * @param expr
-     * @param type
+     * @param expr expr.type can be null or not null
+     * @param type type must be not null
      * @throws TypeCheckException
      */
     private void setExprType(Expression expr, Type type) throws TypeCheckException {
+        if (type == null) {
+            // bug
+            assert false;
+        }
         if (expr.getType() != null && expr.getType() != type) {
             throw new TypeCheckException("type conflict", expr.firstToken.getSourceLocation());
         } else if (expr.getType() == null) {
@@ -133,7 +137,7 @@ public class ASTTypeVisitor implements ASTVisitor {
         } while (this.changed);
 
         if (firstUntypedNode != null) {
-            throw new LexicalException("insufficient type",
+            throw new TypeCheckException("insufficient type",
                     firstUntypedNode.firstToken.getSourceLocation());
         }
 
@@ -225,8 +229,12 @@ public class ASTTypeVisitor implements ASTVisitor {
 
     @Override
     public Object visitExpressionIdent(ExpressionIdent expressionIdent, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        if (expressionIdent.getDec().getType() != null) {
+            this.setExprType(expressionIdent, expressionIdent.getDec().getType());
+        } else {
+            return expressionIdent;
+        }
+        return null;
     }
 
     @Override
@@ -237,14 +245,14 @@ public class ASTTypeVisitor implements ASTVisitor {
 
     @Override
     public Object visitExpressionStringLit(ExpressionStringLit expressionStringLit, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        this.setExprType(expressionStringLit, Type.STRING);
+        return null;
     }
 
     @Override
     public Object visitExpressionBooleanLit(ExpressionBooleanLit expressionBooleanLit, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        this.setExprType(expressionBooleanLit, Type.BOOLEAN);
+        return null;
     }
 
     @Override
@@ -259,12 +267,15 @@ public class ASTTypeVisitor implements ASTVisitor {
     @Override
     public Object visitConstDec(ConstDec constDec, Object arg) throws PLPException {
         if (constDec.getType() == null) {
-            try {
-                Type type = this.getDecTypeByLit(constDec.ident);
-                this.setDecType(constDec, type);
-            } catch (TypeCheckException e) {
-                throw new TypeCheckException("wrong type for const declaration",
-                        constDec.ident.getSourceLocation());
+            if (constDec.val instanceof Integer) {
+                this.setDecType(constDec, Type.NUMBER);
+            } else if (constDec.val instanceof String) {
+                this.setDecType(constDec, Type.STRING);
+            } else if (constDec.val instanceof Boolean) {
+                this.setDecType(constDec, Type.BOOLEAN);
+            } else {
+                throw new TypeCheckException("wrong type for const Declaration",
+                        constDec.firstToken.getSourceLocation());
             }
         }
         return null;
@@ -272,8 +283,7 @@ public class ASTTypeVisitor implements ASTVisitor {
 
     @Override
     public Object visitStatementEmpty(StatementEmpty statementEmpty, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        return null;
     }
 
     @Override
