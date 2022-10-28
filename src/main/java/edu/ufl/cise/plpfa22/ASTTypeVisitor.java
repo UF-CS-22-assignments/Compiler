@@ -1,9 +1,10 @@
 package edu.ufl.cise.plpfa22;
 
-import edu.ufl.cise.plpfa22.IToken.SourceLocation;
+import edu.ufl.cise.plpfa22.ast.ASTNode;
 import edu.ufl.cise.plpfa22.ast.ASTVisitor;
 import edu.ufl.cise.plpfa22.ast.Block;
 import edu.ufl.cise.plpfa22.ast.ConstDec;
+import edu.ufl.cise.plpfa22.ast.Declaration;
 import edu.ufl.cise.plpfa22.ast.Expression;
 import edu.ufl.cise.plpfa22.ast.ExpressionBinary;
 import edu.ufl.cise.plpfa22.ast.ExpressionBooleanLit;
@@ -30,14 +31,38 @@ public class ASTTypeVisitor implements ASTVisitor {
     private boolean changed = false;
 
     /**
+     * set the type of an expression and set this.change to true. Use this method to
+     * avoid forget setting this.change.
+     * 
+     * @param expr
+     * @param type
+     */
+    private void setExprType(Expression expr, Type type) {
+        this.changed = true;
+        expr.setType(type);
+    }
+
+    /**
+     * set the type of a declaration and set this.change to true. Use this method to
+     * avoid forget setting this.change.
+     * 
+     * @param dec
+     * @param type
+     */
+    private void setDecType(Declaration dec, Type type) {
+        this.changed = true;
+        dec.setType(type);
+    }
+
+    /**
      * get the declaration type from an ident.
      * 
      * @param ident
      * @return type of the declaration
      * @throws TypeCheckException thrown if the type of the ident is not NUM_LIT,
-     *                            STRING_LIT, IDENT or BOOLEAN_LIT
+     *                            STRING_LIT or BOOLEAN_LIT
      */
-    private Type getDecTypeByIdent(IToken ident) throws TypeCheckException {
+    private Type getDecTypeByLit(IToken ident) throws TypeCheckException {
         switch (ident.getKind()) {
             case NUM_LIT -> {
                 return Type.NUMBER;
@@ -48,9 +73,6 @@ public class ASTTypeVisitor implements ASTVisitor {
             case BOOLEAN_LIT -> {
                 return Type.BOOLEAN;
             }
-            case IDENT -> {
-                return Type.PROCEDURE;
-            }
             default -> {
                 throw new TypeCheckException();
             }
@@ -59,17 +81,12 @@ public class ASTTypeVisitor implements ASTVisitor {
 
     @Override
     public Object visitBlock(Block block, Object arg) throws PLPException {
+        ASTNode untypedNode = null;
         for (ConstDec constDec : block.constDecs) {
             if (constDec.getType() == null) {
-                this.changed = true;
                 try {
-                    Type type = this.getDecTypeByIdent(constDec.ident);
-                    if (type == Type.PROCEDURE) {
-                        // type error: declare procedure in const declaration.
-                        throw new TypeCheckException();
-                    } else {
-                        constDec.setType(type);
-                    }
+                    Type type = this.getDecTypeByLit(constDec.ident);
+                    this.setDecType(constDec, type);
                 } catch (TypeCheckException e) {
                     throw new TypeCheckException("wrong type for const declaration",
                             constDec.ident.getSourceLocation());
@@ -79,23 +96,35 @@ public class ASTTypeVisitor implements ASTVisitor {
 
         for (ProcDec procDec : block.procedureDecs) {
             if (procDec.getType() == null) {
-                this.changed = true;
-                procDec.setType(Type.PROCEDURE);
+                this.setDecType(procDec, Type.PROCEDURE);
             }
-            procDec.block.visit(this, null);
+            ASTNode procBlockUntypedNode = (ASTNode) procDec.block.visit(this, null);
+            if (untypedNode == null) {
+                untypedNode = procBlockUntypedNode;
+            }
         }
-        block.statement.visit(this, null);
-        return null;
+
+        ASTNode blockUntypedNode = (ASTNode) block.statement.visit(this, null);
+        if (untypedNode == null) {
+            untypedNode = blockUntypedNode;
+        }
+        return untypedNode;
     }
 
     /* arg: if it's the typing visit. */
     @Override
     public Object visitProgram(Program program, Object arg) throws PLPException {
+        ASTNode firstUntypedNode;
         // visit the children if anything is typed on the last visit.
         do {
             this.changed = false;
-            program.block.visit(this, null);
+            firstUntypedNode = (ASTNode) program.block.visit(this, null);
         } while (this.changed);
+
+        if (firstUntypedNode != null) {
+            throw new LexicalException("insufficient type",
+                    firstUntypedNode.firstToken.getSourceLocation());
+        }
 
         return null;
     }
@@ -105,15 +134,25 @@ public class ASTTypeVisitor implements ASTVisitor {
         Ident ident = statementAssign.ident;
         Expression expression = statementAssign.expression;
         if (ident.getDec().getType() == null && expression.getType() != null) {
-            ident.getDec().setType(expression.getType());
+            // set the ident's type by expression type
+            this.setDecType(ident.getDec(), expression.getType());
+            return null;
         } else if (ident.getDec().getType() != null && expression.getType() == null) {
-            expression.visit(this, ident.getDec().getType());
-        } else if (ident.getDec().getType() != null && expression.getType() != null
-                && ident.getDec().getType() != expression.getType()) {
-            throw new TypeCheckException("variable type error", ident.getSourceLocation());
+            // visit the expression knowing that it has this type
+            return expression.visit(this, ident.getDec().getType());
+        } else if (ident.getDec().getType() != null && expression.getType() != null) {
+            // inconsistant type.
+            if (ident.getDec().getType() != expression.getType()) {
+                throw new TypeCheckException("variable type error", ident.getSourceLocation());
+            } else {
+                // is it possible that an expression has type but it still needs to be visited?
+                return expression.visit(this, expression.getType());
+            }
+        } else {
+            // both are null, visit the expression and deal with this in the next pass.
+            expression.visit(this, null);
+            return ident;
         }
-        // else, the ident's type can't be determined, ignore it.
-        return null;
     }
 
     @Override
@@ -172,8 +211,8 @@ public class ASTTypeVisitor implements ASTVisitor {
 
     @Override
     public Object visitExpressionNumLit(ExpressionNumLit expressionNumLit, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        this.setExprType(expressionNumLit, Type.NUMBER);
+        return null;
     }
 
     @Override
