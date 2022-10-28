@@ -36,22 +36,51 @@ public class ASTTypeVisitor implements ASTVisitor {
      * 
      * @param expr
      * @param type
+     * @throws TypeCheckException
      */
-    private void setExprType(Expression expr, Type type) {
-        this.changed = true;
-        expr.setType(type);
+    private void setExprType(Expression expr, Type type) throws TypeCheckException {
+        if (expr.getType() != null && expr.getType() != type) {
+            throw new TypeCheckException("type conflict", expr.firstToken.getSourceLocation());
+        } else if (expr.getType() == null) {
+            this.changed = true;
+            expr.setType(type);
+        }
     }
 
     /**
      * set the type of a declaration and set this.change to true. Use this method to
      * avoid forget setting this.change.
+     * throw exception if conflict
      * 
      * @param dec
      * @param type
+     * @throws TypeCheckException
      */
-    private void setDecType(Declaration dec, Type type) {
-        this.changed = true;
-        dec.setType(type);
+    private void setDecType(Declaration dec, Type type) throws TypeCheckException {
+        if (dec.getType() != null && dec.getType() != type) {
+            throw new TypeCheckException("type conflict", dec.firstToken.getSourceLocation());
+        } else if (dec.getType() == null) {
+            this.changed = true;
+            dec.setType(type);
+        }
+    }
+
+    /**
+     * visit the node with arg, return the first untyped node.
+     * 
+     * @param node    the node to visit
+     * @param arg     the arg to the node
+     * @param untyped current untyped node
+     * @return
+     * @throws PLPException
+     */
+    private ASTNode visitSetUntyped(ASTNode node, Object arg, ASTNode untyped) throws PLPException {
+        ASTNode res = (ASTNode) node.visit(this, arg);
+        if (untyped == null) {
+            return res;
+        } else {
+            return untyped;
+        }
     }
 
     /**
@@ -83,31 +112,13 @@ public class ASTTypeVisitor implements ASTVisitor {
     public Object visitBlock(Block block, Object arg) throws PLPException {
         ASTNode untypedNode = null;
         for (ConstDec constDec : block.constDecs) {
-            if (constDec.getType() == null) {
-                try {
-                    Type type = this.getDecTypeByLit(constDec.ident);
-                    this.setDecType(constDec, type);
-                } catch (TypeCheckException e) {
-                    throw new TypeCheckException("wrong type for const declaration",
-                            constDec.ident.getSourceLocation());
-                }
-            }
+            constDec.visit(this, null);
         }
 
         for (ProcDec procDec : block.procedureDecs) {
-            if (procDec.getType() == null) {
-                this.setDecType(procDec, Type.PROCEDURE);
-            }
-            ASTNode procBlockUntypedNode = (ASTNode) procDec.block.visit(this, null);
-            if (untypedNode == null) {
-                untypedNode = procBlockUntypedNode;
-            }
+            untypedNode = this.visitSetUntyped(procDec, null, untypedNode);
         }
-
-        ASTNode blockUntypedNode = (ASTNode) block.statement.visit(this, null);
-        if (untypedNode == null) {
-            untypedNode = blockUntypedNode;
-        }
+        untypedNode = this.visitSetUntyped(block.statement, null, untypedNode);
         return untypedNode;
     }
 
@@ -229,14 +240,25 @@ public class ASTTypeVisitor implements ASTVisitor {
 
     @Override
     public Object visitProcedure(ProcDec procDec, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        if (procDec.getType() == null) {
+            this.setDecType(procDec, Type.PROCEDURE);
+        }
+        return procDec.block.visit(this, null);
+
     }
 
     @Override
     public Object visitConstDec(ConstDec constDec, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        if (constDec.getType() == null) {
+            try {
+                Type type = this.getDecTypeByLit(constDec.ident);
+                this.setDecType(constDec, type);
+            } catch (TypeCheckException e) {
+                throw new TypeCheckException("wrong type for const declaration",
+                        constDec.ident.getSourceLocation());
+            }
+        }
+        return null;
     }
 
     @Override
