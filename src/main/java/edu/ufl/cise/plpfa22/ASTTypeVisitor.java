@@ -183,7 +183,8 @@ public class ASTTypeVisitor implements ASTVisitor {
 
     @Override
     public Object visitStatementCall(StatementCall statementCall, Object arg) throws PLPException {
-        if (statementCall.ident.getDec().getType() != Type.PROCEDURE) {
+        if (statementCall.ident.getDec().getType() != null
+                && statementCall.ident.getDec().getType() != Type.PROCEDURE) {
             throw new TypeCheckException("can't call a statement that is not a procedure",
                     statementCall.ident.firstToken.getSourceLocation());
         }
@@ -352,6 +353,10 @@ public class ASTTypeVisitor implements ASTVisitor {
 
     @Override
     public Object visitExpressionIdent(ExpressionIdent expressionIdent, Object arg) throws PLPException {
+
+        if ((Type) arg != null) {
+            this.setExprType(expressionIdent, (Type) arg);
+        }
         if (expressionIdent.getDec().getType() != null) {
             this.setExprType(expressionIdent, expressionIdent.getDec().getType());
         } else {
@@ -362,18 +367,27 @@ public class ASTTypeVisitor implements ASTVisitor {
 
     @Override
     public Object visitExpressionNumLit(ExpressionNumLit expressionNumLit, Object arg) throws PLPException {
+        if ((Type) arg != null) {
+            this.setExprType(expressionNumLit, (Type) arg);
+        }
         this.setExprType(expressionNumLit, Type.NUMBER);
         return null;
     }
 
     @Override
     public Object visitExpressionStringLit(ExpressionStringLit expressionStringLit, Object arg) throws PLPException {
+        if ((Type) arg != null) {
+            this.setExprType(expressionStringLit, (Type) arg);
+        }
         this.setExprType(expressionStringLit, Type.STRING);
         return null;
     }
 
     @Override
     public Object visitExpressionBooleanLit(ExpressionBooleanLit expressionBooleanLit, Object arg) throws PLPException {
+        if ((Type) arg != null) {
+            this.setExprType(expressionBooleanLit, (Type) arg);
+        }
         this.setExprType(expressionBooleanLit, Type.BOOLEAN);
         return null;
     }
