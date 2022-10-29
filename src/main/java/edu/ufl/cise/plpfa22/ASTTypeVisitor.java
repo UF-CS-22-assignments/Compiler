@@ -3,6 +3,8 @@ package edu.ufl.cise.plpfa22;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.imageio.plugins.tiff.ExifParentTIFFTagSet;
+
 import edu.ufl.cise.plpfa22.ast.ASTNode;
 import edu.ufl.cise.plpfa22.ast.ASTVisitor;
 import edu.ufl.cise.plpfa22.ast.Block;
@@ -356,6 +358,7 @@ public class ASTTypeVisitor implements ASTVisitor {
 
         if ((Type) arg != null) {
             this.setExprType(expressionIdent, (Type) arg);
+            this.setDecType(expressionIdent.getDec(), (Type) arg);
         }
         if (expressionIdent.getDec().getType() != null) {
             this.setExprType(expressionIdent, expressionIdent.getDec().getType());

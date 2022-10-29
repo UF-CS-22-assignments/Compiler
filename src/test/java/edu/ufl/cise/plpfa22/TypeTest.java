@@ -455,6 +455,24 @@ class TypeTest {
 	}
 
 	@Test
+	void binaryExpression1_simple(TestInfo testInfo) throws PLPException {
+		String input = """
+				PROCEDURE whilen;
+					VAR a,b,c;
+					WHILE ((a+b)=c)
+					DO
+						BEGIN
+							?a;
+							!b;
+							c:=0
+						END
+					;
+				.
+				""";
+		runTest(input, testInfo);
+	}
+
+	@Test
 	void binaryExpression1(TestInfo testInfo) throws PLPException {
 		String input = """
 				CONST d=2 , e=34, f=34, g="TRUE";
