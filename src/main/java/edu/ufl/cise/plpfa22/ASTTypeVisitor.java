@@ -1,5 +1,8 @@
 package edu.ufl.cise.plpfa22;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import edu.ufl.cise.plpfa22.ast.ASTNode;
 import edu.ufl.cise.plpfa22.ast.ASTVisitor;
 import edu.ufl.cise.plpfa22.ast.Block;
@@ -260,27 +263,91 @@ public class ASTTypeVisitor implements ASTVisitor {
 
     @Override
     public Object visitExpressionBinary(ExpressionBinary expressionBinary, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-
-        Expression Expression0 = expressionBinary.e0;
-        Expression Expression1 = expressionBinary.e1;
-
-        if(Expression0.getType() == null && Expression1.getType() != null){
-            this.setExprType(Expression0,Expression1.getType());
+        // check arg type
+        if ((Type) arg != null) {
+            this.setExprType(expressionBinary, (Type) arg);
         }
-        else if(Expression0.getType() != null && Expression1.getType() == null){
-            this.setExprType(Expression1,Expression0.getType());
-        }
-        else if(Expression0.getType() != null && Expression1.getType() != null){
-            if(Expression0.getType() != Expression1.getType()){
-                throw new TypeCheckException("variable type error", expressionBinary.getSourceLocation());
+
+        // make sure that if there's only one expression that doesn't have type, set it
+        // to expression 0
+        // that is, there will only be null x null, not-null x null, not-null x not-null
+
+        Expression expression0 = expressionBinary.e0.getType() == null ? expressionBinary.e1 : expressionBinary.e0;
+        Expression expression1 = expressionBinary.e0.getType() == null ? expressionBinary.e0 : expressionBinary.e1;
+        ASTNode untyped = null;
+
+        switch (expressionBinary.op.getKind()) {
+            case PLUS, MINUS, DIV, MOD, TIMES -> {
+                // a x a -> a
+                List<Type> allowedKindLeft = new ArrayList<>();
+                switch (expressionBinary.op.getKind()) {
+                    case PLUS -> {
+                        allowedKindLeft.add(Type.NUMBER);
+                        allowedKindLeft.add(Type.STRING);
+                        allowedKindLeft.add(Type.BOOLEAN);
+                    }
+                    case MINUS, DIV, MOD -> {
+                        allowedKindLeft.add(Type.NUMBER);
+                    }
+                    case TIMES -> {
+                        allowedKindLeft.add(Type.NUMBER);
+                        allowedKindLeft.add(Type.BOOLEAN);
+                    }
+                    default -> {
+                        assert false;
+                    }
+                }
+                if (expressionBinary.getType() != null) {
+                    // _ x _ -> not-null
+                    if (!allowedKindLeft.contains(expressionBinary.getType())) {
+                        throw new TypeCheckException("wrong type for expressionBinary",
+                                expressionBinary.getFirstToken().getSourceLocation());
+                    }
+                    untyped = this.visitSetUntyped(expression0, expressionBinary.getType(), untyped);
+                    untyped = this.visitSetUntyped(expression1, expressionBinary.getType(), untyped);
+                } else {
+                    // _ x _ -> null
+                    if (expression0.getType() != null) {
+                        // not-null x _ -> null
+                        if (!allowedKindLeft.contains(expression0.getType())) {
+                            throw new TypeCheckException("wrong type for expressionBinary",
+                                    expressionBinary.getFirstToken().getSourceLocation());
+                        }
+                        expressionBinary.setType(expression0.getType());
+                        untyped = this.visitSetUntyped(expression0, null, untyped);
+                        untyped = this.visitSetUntyped(expression1, expression0.getType(), untyped);
+                    } else {
+                        // null x null -> null
+                        untyped = this.visitSetUntyped(expression0, null, untyped);
+                        untyped = this.visitSetUntyped(expression1, null, untyped);
+                    }
+                }
+
+            }
+            case EQ, NEQ, LT, LE, GT, GE -> {
+                // a x a -> BOOLEAN
+                // a \in {NUMBER, BOOLEAN, STRING}
+                if (expressionBinary.getType() != null && expressionBinary.getType() != Type.BOOLEAN) {
+                    throw new TypeCheckException("This expressionBinary should have BOOLEAN type",
+                            expressionBinary.getFirstToken().getSourceLocation());
+                }
+                if (expression0.getType() == null) {
+                    // null x null -> BOOLEAN
+                    untyped = this.visitSetUntyped(expression0, null, untyped);
+                    untyped = this.visitSetUntyped(expression1, null, untyped);
+                } else {
+                    // not-null x _ -> BOOLEAN
+                    untyped = this.visitSetUntyped(expression0, null, untyped);
+                    untyped = this.visitSetUntyped(expression1, expression0.getType(), untyped);
+                }
+
+            }
+            default -> {
+                assert false;
             }
         }
-        else{
-            Expression0.visit(this, arg);
-            Expression1.visit(this, arg);
-        }
-        return null;
+
+        return untyped;
     }
 
     @Override
