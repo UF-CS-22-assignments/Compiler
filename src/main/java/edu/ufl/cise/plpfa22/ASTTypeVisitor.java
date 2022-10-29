@@ -32,7 +32,8 @@ public class ASTTypeVisitor implements ASTVisitor {
 
     /**
      * set the type of an expression and set this.change to true. Use this method to
-     * avoid forget setting this.change.
+     * avoid forget setting this.change. If it's already typed, check if the type is
+     * correct.
      * 
      * @param expr expr.type can be null or not null
      * @param type type must be not null
@@ -178,14 +179,25 @@ public class ASTTypeVisitor implements ASTVisitor {
 
     @Override
     public Object visitStatementCall(StatementCall statementCall, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        if (statementCall.ident.getDec().getType() != Type.PROCEDURE) {
+            throw new TypeCheckException("can't call a statement that is not a procedure",
+                    statementCall.ident.firstToken.getSourceLocation());
+        }
+        return null;
     }
 
     @Override
     public Object visitStatementInput(StatementInput statementInput, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        Ident ident = statementInput.ident;
+        Type identType = ident.getDec().getType();
+        if (identType == null) {
+            return ident;
+        }
+        if (identType != Type.NUMBER && identType != Type.BOOLEAN && identType != Type.STRING) {
+            throw new TypeCheckException("can only input to number, boolean and string variable",
+                    ident.getFirstToken().getSourceLocation());
+        }
+        return null;
     }
 
     @Override
@@ -211,8 +223,18 @@ public class ASTTypeVisitor implements ASTVisitor {
 
     @Override
     public Object visitStatementIf(StatementIf statementIf, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        Expression expression = statementIf.expression;
+        Type exprType = expression.getType();
+        ASTNode untyped = null;
+        if (exprType != null && exprType != Type.BOOLEAN) {
+            throw new TypeCheckException("expression in statementIf shoule be type boolean",
+                    statementIf.getFirstToken().getSourceLocation());
+        } else {
+            untyped = this.visitSetUntyped(expression, Type.BOOLEAN, untyped);
+            untyped = this.visitSetUntyped(statementIf.statement, null, untyped);
+            return untyped;
+        }
+
     }
 
     @Override
