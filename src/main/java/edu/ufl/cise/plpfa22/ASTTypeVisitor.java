@@ -1,5 +1,8 @@
 package edu.ufl.cise.plpfa22;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import edu.ufl.cise.plpfa22.ast.ASTNode;
 import edu.ufl.cise.plpfa22.ast.ASTVisitor;
 import edu.ufl.cise.plpfa22.ast.Block;
@@ -89,31 +92,6 @@ public class ASTTypeVisitor implements ASTVisitor {
         }
     }
 
-    /**
-     * get the declaration type from an ident.
-     * 
-     * @param ident
-     * @return type of the declaration
-     * @throws TypeCheckException thrown if the type of the ident is not NUM_LIT,
-     *                            STRING_LIT or BOOLEAN_LIT
-     */
-    private Type getDecTypeByLit(IToken ident) throws TypeCheckException {
-        switch (ident.getKind()) {
-            case NUM_LIT -> {
-                return Type.NUMBER;
-            }
-            case STRING_LIT -> {
-                return Type.STRING;
-            }
-            case BOOLEAN_LIT -> {
-                return Type.BOOLEAN;
-            }
-            default -> {
-                throw new TypeCheckException();
-            }
-        }
-    }
-
     @Override
     public Object visitBlock(Block block, Object arg) throws PLPException {
         ASTNode untypedNode = null;
@@ -150,6 +128,9 @@ public class ASTTypeVisitor implements ASTVisitor {
     public Object visitStatementAssign(StatementAssign statementAssign, Object arg) throws PLPException {
         Ident ident = statementAssign.ident;
         Expression expression = statementAssign.expression;
+        if (ident.getDec() instanceof ConstDec) {
+            throw new TypeCheckException("can't assign to const variables", ident.getSourceLocation());
+        }
         if (ident.getDec().getType() == null && expression.getType() != null) {
             // set the ident's type by expression type
             this.setDecType(ident.getDec(), expression.getType());
@@ -174,13 +155,14 @@ public class ASTTypeVisitor implements ASTVisitor {
 
     @Override
     public Object visitVarDec(VarDec varDec, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        assert false;// shouldn't visit var declaration.
+        return null;
     }
 
     @Override
     public Object visitStatementCall(StatementCall statementCall, Object arg) throws PLPException {
-        if (statementCall.ident.getDec().getType() != Type.PROCEDURE) {
+        if (statementCall.ident.getDec().getType() != null
+                && statementCall.ident.getDec().getType() != Type.PROCEDURE) {
             throw new TypeCheckException("can't call a statement that is not a procedure",
                     statementCall.ident.firstToken.getSourceLocation());
         }
@@ -218,12 +200,12 @@ public class ASTTypeVisitor implements ASTVisitor {
 
     @Override
     public Object visitStatementBlock(StatementBlock statementBlock, Object arg) throws PLPException {
-
+        ASTNode untyped = null;
         for (Statement statement : statementBlock.statements) {
-            statement.visit(this, arg);
+            untyped = this.visitSetUntyped(statement, arg, untyped);
         }
 
-        return null;
+        return untyped;
     }
 
     @Override
@@ -244,7 +226,6 @@ public class ASTTypeVisitor implements ASTVisitor {
 
     @Override
     public Object visitStatementWhile(StatementWhile statementWhile, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
         Expression expression = statementWhile.expression;
         Type exprType = expression.getType();
         ASTNode untyped = null;
@@ -260,31 +241,100 @@ public class ASTTypeVisitor implements ASTVisitor {
 
     @Override
     public Object visitExpressionBinary(ExpressionBinary expressionBinary, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-
-        Expression Expression0 = expressionBinary.e0;
-        Expression Expression1 = expressionBinary.e1;
-
-        if(Expression0.getType() == null && Expression1.getType() != null){
-            this.setExprType(Expression0,Expression1.getType());
+        // check arg type
+        if ((Type) arg != null) {
+            this.setExprType(expressionBinary, (Type) arg);
         }
-        else if(Expression0.getType() != null && Expression1.getType() == null){
-            this.setExprType(Expression1,Expression0.getType());
-        }
-        else if(Expression0.getType() != null && Expression1.getType() != null){
-            if(Expression0.getType() != Expression1.getType()){
-                throw new TypeCheckException("variable type error", expressionBinary.getSourceLocation());
+
+        // make sure that if there's only one expression that doesn't have type, set it
+        // to expression 0
+        // that is, there will only be null x null, not-null x null, not-null x not-null
+
+        Expression expression0 = expressionBinary.e0.getType() == null ? expressionBinary.e1 : expressionBinary.e0;
+        Expression expression1 = expressionBinary.e0.getType() == null ? expressionBinary.e0 : expressionBinary.e1;
+        ASTNode untyped = null;
+
+        switch (expressionBinary.op.getKind()) {
+            case PLUS, MINUS, DIV, MOD, TIMES -> {
+                // a x a -> a
+                List<Type> allowedKindLeft = new ArrayList<>();
+                switch (expressionBinary.op.getKind()) {
+                    case PLUS -> {
+                        allowedKindLeft.add(Type.NUMBER);
+                        allowedKindLeft.add(Type.STRING);
+                        allowedKindLeft.add(Type.BOOLEAN);
+                    }
+                    case MINUS, DIV, MOD -> {
+                        allowedKindLeft.add(Type.NUMBER);
+                    }
+                    case TIMES -> {
+                        allowedKindLeft.add(Type.NUMBER);
+                        allowedKindLeft.add(Type.BOOLEAN);
+                    }
+                    default -> {
+                        assert false;
+                    }
+                }
+                if (expressionBinary.getType() != null) {
+                    // _ x _ -> not-null
+                    if (!allowedKindLeft.contains(expressionBinary.getType())) {
+                        throw new TypeCheckException("wrong type for expressionBinary",
+                                expressionBinary.getFirstToken().getSourceLocation());
+                    }
+                    untyped = this.visitSetUntyped(expression0, expressionBinary.getType(), untyped);
+                    untyped = this.visitSetUntyped(expression1, expressionBinary.getType(), untyped);
+                } else {
+                    // _ x _ -> null
+                    if (expression0.getType() != null) {
+                        // not-null x _ -> null
+                        if (!allowedKindLeft.contains(expression0.getType())) {
+                            throw new TypeCheckException("wrong type for expressionBinary",
+                                    expressionBinary.getFirstToken().getSourceLocation());
+                        }
+                        expressionBinary.setType(expression0.getType());
+                        untyped = this.visitSetUntyped(expression0, null, untyped);
+                        untyped = this.visitSetUntyped(expression1, expression0.getType(), untyped);
+                    } else {
+                        // null x null -> null
+                        untyped = this.visitSetUntyped(expression0, null, untyped);
+                        untyped = this.visitSetUntyped(expression1, null, untyped);
+                    }
+                }
+
+            }
+            case EQ, NEQ, LT, LE, GT, GE -> {
+                // a x a -> BOOLEAN
+                // a \in {NUMBER, BOOLEAN, STRING}
+                if (expressionBinary.getType() != null && expressionBinary.getType() != Type.BOOLEAN) {
+                    throw new TypeCheckException("This expressionBinary should have BOOLEAN type",
+                            expressionBinary.getFirstToken().getSourceLocation());
+                }
+                if (expression0.getType() == null) {
+                    // null x null -> BOOLEAN
+                    untyped = this.visitSetUntyped(expression0, null, untyped);
+                    untyped = this.visitSetUntyped(expression1, null, untyped);
+                } else {
+                    // not-null x _ -> BOOLEAN
+                    untyped = this.visitSetUntyped(expression0, null, untyped);
+                    untyped = this.visitSetUntyped(expression1, expression0.getType(), untyped);
+                }
+
+            }
+            default -> {
+                assert false;
             }
         }
-        else{
-            Expression0.visit(this, arg);
-            Expression1.visit(this, arg);
-        }
-        return null;
+
+        return untyped;
     }
 
     @Override
     public Object visitExpressionIdent(ExpressionIdent expressionIdent, Object arg) throws PLPException {
+
+        if ((Type) arg != null) {
+            this.setExprType(expressionIdent, (Type) arg);
+            this.setDecType(expressionIdent.getDec(), (Type) arg);
+        }
         if (expressionIdent.getDec().getType() != null) {
             this.setExprType(expressionIdent, expressionIdent.getDec().getType());
         } else {
@@ -295,18 +345,27 @@ public class ASTTypeVisitor implements ASTVisitor {
 
     @Override
     public Object visitExpressionNumLit(ExpressionNumLit expressionNumLit, Object arg) throws PLPException {
+        if ((Type) arg != null) {
+            this.setExprType(expressionNumLit, (Type) arg);
+        }
         this.setExprType(expressionNumLit, Type.NUMBER);
         return null;
     }
 
     @Override
     public Object visitExpressionStringLit(ExpressionStringLit expressionStringLit, Object arg) throws PLPException {
+        if ((Type) arg != null) {
+            this.setExprType(expressionStringLit, (Type) arg);
+        }
         this.setExprType(expressionStringLit, Type.STRING);
         return null;
     }
 
     @Override
     public Object visitExpressionBooleanLit(ExpressionBooleanLit expressionBooleanLit, Object arg) throws PLPException {
+        if ((Type) arg != null) {
+            this.setExprType(expressionBooleanLit, (Type) arg);
+        }
         this.setExprType(expressionBooleanLit, Type.BOOLEAN);
         return null;
     }
@@ -344,8 +403,8 @@ public class ASTTypeVisitor implements ASTVisitor {
 
     @Override
     public Object visitIdent(Ident ident, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        assert false; // shouldn't visit Ident
+        return null;
     }
 
 }
