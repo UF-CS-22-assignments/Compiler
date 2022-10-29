@@ -245,7 +245,17 @@ public class ASTTypeVisitor implements ASTVisitor {
     @Override
     public Object visitStatementWhile(StatementWhile statementWhile, Object arg) throws PLPException {
         // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        Expression expression = statementWhile.expression;
+        Type exprType = expression.getType();
+        ASTNode untyped = null;
+        if (exprType != null && exprType != Type.BOOLEAN) {
+            throw new TypeCheckException("expression in statementIf shoule be type boolean",
+                    statementWhile.getFirstToken().getSourceLocation());
+        } else {
+            untyped = this.visitSetUntyped(expression, Type.BOOLEAN, untyped);
+            untyped = this.visitSetUntyped(statementWhile.statement, null, untyped);
+            return untyped;
+        }
     }
 
     @Override
