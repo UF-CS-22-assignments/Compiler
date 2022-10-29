@@ -3,8 +3,6 @@ package edu.ufl.cise.plpfa22;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.imageio.plugins.tiff.ExifParentTIFFTagSet;
-
 import edu.ufl.cise.plpfa22.ast.ASTNode;
 import edu.ufl.cise.plpfa22.ast.ASTVisitor;
 import edu.ufl.cise.plpfa22.ast.Block;
@@ -94,31 +92,6 @@ public class ASTTypeVisitor implements ASTVisitor {
         }
     }
 
-    /**
-     * get the declaration type from an ident.
-     * 
-     * @param ident
-     * @return type of the declaration
-     * @throws TypeCheckException thrown if the type of the ident is not NUM_LIT,
-     *                            STRING_LIT or BOOLEAN_LIT
-     */
-    private Type getDecTypeByLit(IToken ident) throws TypeCheckException {
-        switch (ident.getKind()) {
-            case NUM_LIT -> {
-                return Type.NUMBER;
-            }
-            case STRING_LIT -> {
-                return Type.STRING;
-            }
-            case BOOLEAN_LIT -> {
-                return Type.BOOLEAN;
-            }
-            default -> {
-                throw new TypeCheckException();
-            }
-        }
-    }
-
     @Override
     public Object visitBlock(Block block, Object arg) throws PLPException {
         ASTNode untypedNode = null;
@@ -182,8 +155,8 @@ public class ASTTypeVisitor implements ASTVisitor {
 
     @Override
     public Object visitVarDec(VarDec varDec, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        assert false;// shouldn't visit var declaration.
+        return null;
     }
 
     @Override
@@ -253,7 +226,6 @@ public class ASTTypeVisitor implements ASTVisitor {
 
     @Override
     public Object visitStatementWhile(StatementWhile statementWhile, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
         Expression expression = statementWhile.expression;
         Type exprType = expression.getType();
         ASTNode untyped = null;
@@ -431,8 +403,8 @@ public class ASTTypeVisitor implements ASTVisitor {
 
     @Override
     public Object visitIdent(Ident ident, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+        assert false; // shouldn't visit Ident
+        return null;
     }
 
 }
