@@ -24,6 +24,7 @@ import edu.ufl.cise.plpfa22.ast.StatementOutput;
 import edu.ufl.cise.plpfa22.ast.StatementWhile;
 import edu.ufl.cise.plpfa22.ast.VarDec;
 import edu.ufl.cise.plpfa22.ast.Types.Type;
+import edu.ufl.cise.plpfa22.ast.Statement;
 
 public class ASTTypeVisitor implements ASTVisitor {
 
@@ -217,8 +218,12 @@ public class ASTTypeVisitor implements ASTVisitor {
 
     @Override
     public Object visitStatementBlock(StatementBlock statementBlock, Object arg) throws PLPException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedException();
+
+        for (Statement statement : statementBlock.statements) {
+            statement.visit(this, arg);
+        }
+
+        return null;
     }
 
     @Override
@@ -246,7 +251,26 @@ public class ASTTypeVisitor implements ASTVisitor {
     @Override
     public Object visitExpressionBinary(ExpressionBinary expressionBinary, Object arg) throws PLPException {
         // TODO Auto-generated method stub
-        throw new UnsupportedException();
+
+        Expression Expression0 = expressionBinary.e0;
+        Expression Expression1 = expressionBinary.e1;
+
+        if(Expression0.getType() == null && Expression1.getType() != null){
+            this.setExprType(Expression0,Expression1.getType());
+        }
+        else if(Expression0.getType() != null && Expression1.getType() == null){
+            this.setExprType(Expression1,Expression0.getType());
+        }
+        else if(Expression0.getType() != null && Expression1.getType() != null){
+            if(Expression0.getType() != Expression1.getType()){
+                throw new TypeCheckException("variable type error", expressionBinary.getSourceLocation());
+            }
+        }
+        else{
+            Expression0.visit(this, arg);
+            Expression1.visit(this, arg);
+        }
+        return null;
     }
 
     @Override
