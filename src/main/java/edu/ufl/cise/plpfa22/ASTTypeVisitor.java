@@ -155,6 +155,9 @@ public class ASTTypeVisitor implements ASTVisitor {
     public Object visitStatementAssign(StatementAssign statementAssign, Object arg) throws PLPException {
         Ident ident = statementAssign.ident;
         Expression expression = statementAssign.expression;
+        if (ident.getDec() instanceof ConstDec) {
+            throw new TypeCheckException("can't assign to const variables", ident.getSourceLocation());
+        }
         if (ident.getDec().getType() == null && expression.getType() != null) {
             // set the ident's type by expression type
             this.setDecType(ident.getDec(), expression.getType());
@@ -224,12 +227,12 @@ public class ASTTypeVisitor implements ASTVisitor {
 
     @Override
     public Object visitStatementBlock(StatementBlock statementBlock, Object arg) throws PLPException {
-
+        ASTNode untyped = null;
         for (Statement statement : statementBlock.statements) {
-            statement.visit(this, arg);
+            untyped = this.visitSetUntyped(statement, arg, untyped);
         }
 
-        return null;
+        return untyped;
     }
 
     @Override
