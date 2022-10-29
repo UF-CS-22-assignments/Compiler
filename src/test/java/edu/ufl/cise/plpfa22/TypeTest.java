@@ -39,6 +39,16 @@ class TypeTest {
 			}
 		}
 	}
+	void show(ASTNode ast, String output) throws PLPException{
+		if (VERBOSE) {
+			if (ast != null) {
+				System.out.println(PrettyPrintVisitor.AST2String(ast));
+				assertEquals(output, PrettyPrintVisitor.AST2String(ast));
+			} else {
+				System.out.println("ast = null");
+			}
+		}
+	}
 
 	void show(Object obj) {
 		if (VERBOSE) {
@@ -53,6 +63,13 @@ class TypeTest {
 		ASTNode ast = getAST(input);
 		checkTypes(ast);
 		show(ast);
+	}
+	void runTest(String input, String output, TestInfo testInfo) throws PLPException{
+		show("\n**********" + testInfo.getDisplayName().split("[(]")[0] + "*************");
+		show(input);
+		ASTNode ast = getAST(input);
+		checkTypes(ast);
+		show(ast,output);
 	}
 
 	// Use this one for tests that should detect an error
@@ -103,7 +120,21 @@ class TypeTest {
 		String input = """
 				! TRUE .
 				""";
-		runTest(input, testInfo);
+		String output = """
+      
+				  PROGRAM
+				    BLOCK
+				      ConstDecs  none
+				      VarDecs none
+				      ProcDecs none
+				      STATEMENT
+				        OUTPUT
+				          BooleanLit true
+				      END OF STATEMENT
+				    END OF BLOCK
+				  END OF PROGRAM\
+				""";
+		runTest(input, output,testInfo);
 	}
 
 	@Test
@@ -451,7 +482,71 @@ class TypeTest {
 				END
 				.
 				""";
-		runTest(input, testInfo);
+		String output = """
+								
+				  PROGRAM
+				    BLOCK
+				      ConstDecs\s
+				        CONST n=42 at nest level 0 type=NUMBER
+				        CONST s=this is a string at nest level 0 type=STRING
+				        CONST x=true at nest level 0 type=BOOLEAN
+				      VarDecs
+				        VAR a at nest level 0 type=NUMBER
+				        VAR b at nest level 0 type=NUMBER
+				        VAR c at nest level 0 type=NUMBER
+				        VAR d at nest level 0 type=STRING
+				        VAR e at nest level 0 type=NUMBER
+				        VAR f at nest level 0 type=NUMBER
+				        VAR g at nest level 0 type=NUMBER
+				      ProcDecs none
+				      STATEMENT
+				        BEGIN
+				          ASSIGNMENT
+				            Ident  a identNest=0 decNest=0 type=NUMBER
+				            NumLit 4
+				          ASSIGNMENT
+				            Ident  b identNest=0 decNest=0 type=NUMBER
+				            binary expr
+				              ExpressionIdent  n identNest=0 decNest=0 type=NUMBER
+				              +
+				              NumLit 4
+				          ASSIGNMENT
+				            Ident  c identNest=0 decNest=0 type=NUMBER
+				            binary expr
+				              ExpressionIdent  b identNest=0 decNest=0 type=NUMBER
+				              -
+				              ExpressionIdent  a identNest=0 decNest=0 type=NUMBER
+				          ASSIGNMENT
+				            Ident  d identNest=0 decNest=0 type=STRING
+				            binary expr
+				              ExpressionIdent  s identNest=0 decNest=0 type=STRING
+				              +
+				              ExpressionIdent  s identNest=0 decNest=0 type=STRING
+				          ASSIGNMENT
+				            Ident  e identNest=0 decNest=0 type=NUMBER
+				            binary expr
+				              ExpressionIdent  a identNest=0 decNest=0 type=NUMBER
+				              *
+				              ExpressionIdent  b identNest=0 decNest=0 type=NUMBER
+				          ASSIGNMENT
+				            Ident  f identNest=0 decNest=0 type=NUMBER
+				            binary expr
+				              ExpressionIdent  a identNest=0 decNest=0 type=NUMBER
+				              /
+				              ExpressionIdent  b identNest=0 decNest=0 type=NUMBER
+				          ASSIGNMENT
+				            Ident  g identNest=0 decNest=0 type=NUMBER
+				            binary expr
+				              ExpressionIdent  a identNest=0 decNest=0 type=NUMBER
+				              %
+				              ExpressionIdent  b identNest=0 decNest=0 type=NUMBER
+				          EmptyStatement
+				        END
+				      END OF STATEMENT
+				    END OF BLOCK
+				  END OF PROGRAM\
+				""";
+		runTest(input, output,testInfo);
 	}
 
 	@Test
@@ -493,7 +588,81 @@ class TypeTest {
 					;
 				.
 				""";
-		runTest(input, testInfo);
+		String output = """
+								
+				  PROGRAM
+				    BLOCK
+				      ConstDecs\s
+				        CONST d=2 at nest level 0 type=NUMBER
+				        CONST e=34 at nest level 0 type=NUMBER
+				        CONST f=34 at nest level 0 type=NUMBER
+				        CONST g=TRUE at nest level 0 type=STRING
+				      VarDecs
+				        VAR a at nest level 0 type=null
+				        VAR b at nest level 0 type=null
+				        VAR c at nest level 0 type=null
+				      ProcDecs
+				        PROCEDURE whilen at nesting level 0
+				          BLOCK
+				            ConstDecs  none
+				            VarDecs
+				              VAR a at nest level 1 type=NUMBER
+				              VAR b at nest level 1 type=NUMBER
+				              VAR c at nest level 1 type=NUMBER
+				            ProcDecs none
+				            STATEMENT
+				              WHILE
+				                binary expr
+				                  binary expr
+				                    ExpressionIdent  a identNest=1 decNest=1 type=NUMBER
+				                    +
+				                    ExpressionIdent  b identNest=1 decNest=1 type=NUMBER
+				                  =
+				                  ExpressionIdent  c identNest=1 decNest=1 type=NUMBER
+				              DO
+				                WHILE
+				                  binary expr
+				                    binary expr
+				                      ExpressionIdent  c identNest=1 decNest=1 type=NUMBER
+				                      -
+				                      ExpressionIdent  d identNest=1 decNest=0 type=NUMBER
+				                    #
+				                    ExpressionIdent  e identNest=1 decNest=0 type=NUMBER
+				                DO
+				                  WHILE
+				                    binary expr
+				                      binary expr
+				                        ExpressionIdent  e identNest=1 decNest=0 type=NUMBER
+				                        %
+				                        NumLit 2
+				                      #
+				                      binary expr
+				                        ExpressionIdent  c identNest=1 decNest=1 type=NUMBER
+				                        /
+				                        NumLit 2
+				                  DO
+				                    BEGIN
+				                      INPUT
+				                        Ident  a identNest=1 decNest=1 type=NUMBER
+				                      OUTPUT
+				                        ExpressionIdent  b identNest=1 decNest=1 type=NUMBER
+				                      ASSIGNMENT
+				                        Ident  c identNest=1 decNest=1 type=NUMBER
+				                        NumLit 0
+				                    END
+				                  END OF WHILE
+				                END OF WHILE
+				              END OF WHILE
+				            END OF STATEMENT
+				          END OF BLOCK
+				        END OF PROCEDURE whilen
+				      STATEMENT
+				        EmptyStatement
+				      END OF STATEMENT
+				    END OF BLOCK
+				  END OF PROGRAM\
+				""";
+		runTest(input, output, testInfo);
 	}
 
 	@Test
@@ -508,7 +677,47 @@ class TypeTest {
 				END
 				.
 				""";
-		runTest(input, testInfo);
+		String output = """
+								
+				  PROGRAM
+				    BLOCK
+				      ConstDecs\s
+				        CONST n=42 at nest level 0 type=STRING
+				        CONST s=this is a string at nest level 0 type=STRING
+				        CONST x=TRUE at nest level 0 type=STRING
+				      VarDecs
+				        VAR a at nest level 0 type=STRING
+				        VAR b at nest level 0 type=STRING
+				        VAR c at nest level 0 type=null
+				        VAR d at nest level 0 type=STRING
+				        VAR e at nest level 0 type=null
+				        VAR f at nest level 0 type=null
+				        VAR g at nest level 0 type=null
+				      ProcDecs none
+				      STATEMENT
+				        BEGIN
+				          ASSIGNMENT
+				            Ident  a identNest=0 decNest=0 type=STRING
+				            StringLit "4"
+				          ASSIGNMENT
+				            Ident  b identNest=0 decNest=0 type=STRING
+				            binary expr
+				              ExpressionIdent  n identNest=0 decNest=0 type=STRING
+				              +
+				              StringLit "4"
+				          ASSIGNMENT
+				            Ident  d identNest=0 decNest=0 type=STRING
+				            binary expr
+				              ExpressionIdent  s identNest=0 decNest=0 type=STRING
+				              +
+				              ExpressionIdent  s identNest=0 decNest=0 type=STRING
+				          EmptyStatement
+				        END
+				      END OF STATEMENT
+				    END OF BLOCK
+				  END OF PROGRAM\
+				""";
+		runTest(input, output, testInfo);
 	}
 
 	@Test
@@ -582,6 +791,48 @@ class TypeTest {
 				END
 				.
 				""";
+		String output = """
+				CONST a = "hello";
+				VAR x,y,z;
+				BEGIN
+				!y;
+				x := a;
+				y := x+y+z
+				END
+				.
+				    
+				    
+				  PROGRAM
+				    BLOCK
+				      ConstDecs\s
+				        CONST a=hello at nest level 0 type=STRING
+				      VarDecs
+				        VAR x at nest level 0 type=STRING
+				        VAR y at nest level 0 type=STRING
+				        VAR z at nest level 0 type=STRING
+				      ProcDecs none
+				      STATEMENT
+				        BEGIN
+				          OUTPUT
+				            ExpressionIdent  y identNest=0 decNest=0 type=STRING
+				          ASSIGNMENT
+				            Ident  x identNest=0 decNest=0 type=STRING
+				            ExpressionIdent  a identNest=0 decNest=0 type=STRING
+				          ASSIGNMENT
+				            Ident  y identNest=0 decNest=0 type=STRING
+				            binary expr
+				              binary expr
+				                ExpressionIdent  x identNest=0 decNest=0 type=STRING
+				                +
+				                ExpressionIdent  y identNest=0 decNest=0 type=STRING
+				              +
+				              ExpressionIdent  z identNest=0 decNest=0 type=STRING
+				        END
+				      END OF STATEMENT
+				    END OF BLOCK
+				  END OF PROGRAM""";
+		show(output);
 		runTest(input, testInfo);
 	}
+
 }
