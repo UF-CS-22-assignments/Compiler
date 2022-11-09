@@ -8,12 +8,11 @@ import org.junit.jupiter.api.TestInfo;
 import edu.ufl.cise.plpfa22.CodeGenUtils.DynamicClassLoader;
 import edu.ufl.cise.plpfa22.ast.ASTNode;
 
-
 public class CodeGenTests {
 
-
 	/**
-	 * Generates  a classfile for the given source program.  The classfile has the given name and package.
+	 * Generates a classfile for the given source program. The classfile has the
+	 * given name and package.
 	 * 
 	 * @param input
 	 * @param className
@@ -28,12 +27,12 @@ public class CodeGenTests {
 		ASTNode ast = CompilerComponentFactory.getParser(lexer).parse();
 		ast.visit(CompilerComponentFactory.getScopeVisitor(), null);
 		ast.visit(CompilerComponentFactory.getTypeInferenceVisitor(), null);
-		byte[] bytecode = (byte[]) ast.visit(CompilerComponentFactory.getCodeGenVisitor(className, packageName, ""), null);
+		byte[] bytecode = (byte[]) ast.visit(CompilerComponentFactory.getCodeGenVisitor(className, packageName, ""),
+				null);
 		show(CodeGenUtils.bytecodeToString(bytecode));
 		show("----------------");
 		return bytecode;
 	}
-
 
 	/**
 	 * Executes indicated method defined in bytecode and returns the result. args is
@@ -51,7 +50,7 @@ public class CodeGenTests {
 	 */
 	Object loadClassAndRunMethod(byte[] bytecode, String className, String methodName, Object[] args) throws Exception {
 		Class<?> testClass = getClass(bytecode, className);
-		return runMethod(testClass,methodName, args);
+		return runMethod(testClass, methodName, args);
 	}
 
 	private Method findMethod(String name, Method[] methods) {
@@ -68,7 +67,6 @@ public class CodeGenTests {
 		Class<?> testClass = loader.define(className, bytecode);
 		return testClass;
 	}
-	
 
 	Object runMethod(Class<?> testClass, String methodName, Object[] args) throws Exception {
 		Method[] methods = testClass.getDeclaredMethods();
@@ -76,37 +74,35 @@ public class CodeGenTests {
 		return m.invoke(null, args);
 	}
 
-
 	static boolean VERBOSE = true;
+
 	void show(Object o) {
 		if (VERBOSE) {
 			System.out.println(o);
 		}
 	}
 
-
-	
 	@DisplayName("numOut")
 	@Test
-	public void numout(TestInfo testInfo)throws Exception {
+	public void numout(TestInfo testInfo) throws Exception {
 		String input = """
-				! 3
+				! 3 + 1
 				.
 				""";
 		String shortClassName = "prog";
 		String JVMpackageName = "edu/ufl/cise/plpfa22";
 		byte[] bytecode = compile(input, shortClassName, JVMpackageName);
-		
+
 		show(CodeGenUtils.bytecodeToString(bytecode));
-		Object[] args = new Object[1];  
+		Object[] args = new Object[1];
 		String className = "edu.ufl.cise.plpfa22.prog";
 		loadClassAndRunMethod(bytecode, className, "main", args);
-	
+
 	}
 
 	@DisplayName("stringOut")
 	@Test
-	public void stringout(TestInfo testInfo)throws Exception {
+	public void stringout(TestInfo testInfo) throws Exception {
 		String input = """
 				! "hello world"
 				.
@@ -115,15 +111,15 @@ public class CodeGenTests {
 		String JVMpackageName = "edu/ufl/cise/plpfa22";
 		byte[] bytecode = compile(input, shortClassName, JVMpackageName);
 		show(CodeGenUtils.bytecodeToString(bytecode));
-		
-		Object[] args = new Object[1];  
+
+		Object[] args = new Object[1];
 		String className = "edu.ufl.cise.plpfa22.prog";
 		loadClassAndRunMethod(bytecode, className, "main", args);
 	}
-	
+
 	@DisplayName("booleanOut")
 	@Test
-	public void booleanOut(TestInfo testInfo)throws Exception {
+	public void booleanOut(TestInfo testInfo) throws Exception {
 		String input = """
 				! TRUE
 				.
@@ -132,57 +128,56 @@ public class CodeGenTests {
 		String JVMpackageName = "edu/ufl/cise/plpfa22";
 		byte[] bytecode = compile(input, shortClassName, JVMpackageName);
 		show(CodeGenUtils.bytecodeToString(bytecode));
-		
-		Object[] args = new Object[1];  
+
+		Object[] args = new Object[1];
 		String className = "edu.ufl.cise.plpfa22.prog";
 		loadClassAndRunMethod(bytecode, className, "main", args);
-	}	
-	
+	}
+
 	@DisplayName("statementBlock")
 	@Test
-	public void statementBlock(TestInfo testInfo)throws Exception{
+	public void statementBlock(TestInfo testInfo) throws Exception {
 		String input = """
-			BEGIN 
-			! 3;
-			! FALSE;
-			! "hey, it works!"
-			END
-			.
-			""";
+				BEGIN
+				! 3;
+				! FALSE;
+				! "hey, it works!"
+				END
+				.
+				""";
 		String shortClassName = "prog";
 		String JVMpackageName = "edu/ufl/cise/plpfa22";
 		byte[] bytecode = compile(input, shortClassName, JVMpackageName);
 		show(CodeGenUtils.bytecodeToString(bytecode));
-		
 
-		Object[] args = new Object[1];  
+		Object[] args = new Object[1];
 		String className = "edu.ufl.cise.plpfa22.prog";
 		loadClassAndRunMethod(bytecode, className, "main", args);
-	}	
-	
+	}
+
 	@DisplayName("intOps")
 	@Test
-	public void intOps(TestInfo testInfo)throws Exception{
+	public void intOps(TestInfo testInfo) throws Exception {
 		String input = """
-			BEGIN 
-			! 1+3;
-			! 7-3;
-			! 2*2;
-			! 16/4;
-			! 20%8;
-			END
-			.
-			""";
+				BEGIN
+				! 1+3;
+				! 7-3;
+				! 2*2;
+				! 16/4;
+				! 20%8;
+				END
+				.
+				""";
 		String shortClassName = "prog";
 		String JVMpackageName = "edu/ufl/cise/plpfa22";
 		byte[] bytecode = compile(input, shortClassName, JVMpackageName);
 		show(CodeGenUtils.bytecodeToString(bytecode));
-		
-		Object[] args = new Object[1];  
+
+		Object[] args = new Object[1];
 		String className = "edu.ufl.cise.plpfa22.prog";
 		loadClassAndRunMethod(bytecode, className, "main", args);
-	}		
-	
+	}
+
 	@DisplayName("intEqOps")
 	@Test
 	public void intEqOps(TestInfo testInfo) throws Exception {
@@ -195,16 +190,16 @@ public class CodeGenTests {
 				END
 				.
 				""";
-		
+
 		String shortClassName = "prog";
 		String JVMpackageName = "edu/ufl/cise/plpfa22";
 		byte[] bytecode = compile(input, shortClassName, JVMpackageName);
 		show(CodeGenUtils.bytecodeToString(bytecode));
-		
-		Object[] args = new Object[1];  
+
+		Object[] args = new Object[1];
 		String className = "edu.ufl.cise.plpfa22.prog";
 		loadClassAndRunMethod(bytecode, className, "main", args);
-		
+
 	}
 
 	@DisplayName("boolEqOps")
@@ -223,20 +218,18 @@ public class CodeGenTests {
 				END
 				.
 				""";
-		
+
 		String shortClassName = "prog";
 		String JVMpackageName = "edu/ufl/cise/plpfa22";
 		byte[] bytecode = compile(input, shortClassName, JVMpackageName);
 		show(CodeGenUtils.bytecodeToString(bytecode));
-		
-		Object[] args = new Object[1];  
+
+		Object[] args = new Object[1];
 		String className = "edu.ufl.cise.plpfa22.prog";
 		loadClassAndRunMethod(bytecode, className, "main", args);
-		
+
 	}
-	
-	
-	
+
 	@DisplayName("intRelOps")
 	@Test
 	public void intRelOps(TestInfo testInfo) throws Exception {
@@ -253,21 +246,21 @@ public class CodeGenTests {
 				! 4 < 3;
 				! 4 <= 3;
 				! 4 > 3;
-				! 4 >= 3						
+				! 4 >= 3
 				END
 				.
 				""";
-		
+
 		String shortClassName = "prog";
 		String JVMpackageName = "edu/ufl/cise/plpfa22";
 		byte[] bytecode = compile(input, shortClassName, JVMpackageName);
 		show(CodeGenUtils.bytecodeToString(bytecode));
-		
-		Object[] args = new Object[1];  
+
+		Object[] args = new Object[1];
 		String className = "edu.ufl.cise.plpfa22.prog";
-		loadClassAndRunMethod(bytecode, className, "main", args);		
+		loadClassAndRunMethod(bytecode, className, "main", args);
 	}
-	
+
 	@DisplayName("boolRelOps")
 	@Test
 	public void boolRelOps(TestInfo testInfo) throws Exception {
@@ -288,22 +281,21 @@ public class CodeGenTests {
 				! FALSE < FALSE;
 				! FALSE <= FALSE;
 				! FALSE > FALSE;
-				! FALSE >= FALSE					
+				! FALSE >= FALSE
 				END
 				.
 				""";
-		
+
 		String shortClassName = "prog";
 		String JVMpackageName = "edu/ufl/cise/plpfa22";
 		byte[] bytecode = compile(input, shortClassName, JVMpackageName);
 		show(CodeGenUtils.bytecodeToString(bytecode));
-		
-		Object[] args = new Object[1];  
+
+		Object[] args = new Object[1];
 		String className = "edu.ufl.cise.plpfa22.prog";
-		loadClassAndRunMethod(bytecode, className, "main", args);		
+		loadClassAndRunMethod(bytecode, className, "main", args);
 	}
-	
-	
+
 	@DisplayName("stringEqOps")
 	@Test
 	public void stringEqOps(TestInfo testInfo) throws Exception {
@@ -316,19 +308,18 @@ public class CodeGenTests {
 				END
 				.
 				""";
-		
+
 		String shortClassName = "prog";
 		String JVMpackageName = "edu/ufl/cise/plpfa22";
 		byte[] bytecode = compile(input, shortClassName, JVMpackageName);
 		show(CodeGenUtils.bytecodeToString(bytecode));
-		
-		Object[] args = new Object[1];  
+
+		Object[] args = new Object[1];
 		String className = "edu.ufl.cise.plpfa22.prog";
 		loadClassAndRunMethod(bytecode, className, "main", args);
-		
+
 	}
-	
-	
+
 	@DisplayName("stringRelOps")
 	@Test
 	public void stringRelOps(TestInfo testInfo) throws Exception {
@@ -349,24 +340,19 @@ public class CodeGenTests {
 				! "FA" < "FA";
 				! "FA" <= "FA";
 				! "FA" > "FA";
-				! "FA" >= "FA"					
+				! "FA" >= "FA"
 				END
 				.
 				""";
-		
+
 		String shortClassName = "prog";
 		String JVMpackageName = "edu/ufl/cise/plpfa22";
 		byte[] bytecode = compile(input, shortClassName, JVMpackageName);
 		show(CodeGenUtils.bytecodeToString(bytecode));
-		
-		Object[] args = new Object[1];  
+
+		Object[] args = new Object[1];
 		String className = "edu.ufl.cise.plpfa22.prog";
-		loadClassAndRunMethod(bytecode, className, "main", args);		
-	}
-	
+		loadClassAndRunMethod(bytecode, className, "main", args);
 	}
 
-
-
-
-
+}
