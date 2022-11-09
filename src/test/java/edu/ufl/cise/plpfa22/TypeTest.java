@@ -39,7 +39,8 @@ class TypeTest {
 			}
 		}
 	}
-	void show(ASTNode ast, String output) throws PLPException{
+
+	void show(ASTNode ast, String output) throws PLPException {
 		if (VERBOSE) {
 			if (ast != null) {
 				System.out.println(PrettyPrintVisitor.AST2String(ast));
@@ -64,12 +65,13 @@ class TypeTest {
 		checkTypes(ast);
 		show(ast);
 	}
-	void runTest(String input, String output, TestInfo testInfo) throws PLPException{
+
+	void runTest(String input, String output, TestInfo testInfo) throws PLPException {
 		show("\n**********" + testInfo.getDisplayName().split("[(]")[0] + "*************");
 		show(input);
 		ASTNode ast = getAST(input);
 		checkTypes(ast);
-		show(ast,output);
+		show(ast, output);
 	}
 
 	// Use this one for tests that should detect an error
@@ -88,6 +90,24 @@ class TypeTest {
 			}
 			show(ast);
 		});
+	}
+
+	@Test
+	void test_failed(TestInfo testInfo) throws PLPException {
+		String input = """
+				VAR x,y,z;
+				PROCEDURE p;;
+				PROCEDURE q;
+						p:=x;
+				BEGIN
+					CALL p;
+					p:=q;
+					q:=x
+				END
+				.
+				""";
+		runTest(input, testInfo, TypeCheckException.class);
+
 	}
 
 	@Test
@@ -121,7 +141,7 @@ class TypeTest {
 				! TRUE .
 				""";
 		String output = """
-      
+
 				  PROGRAM
 				    BLOCK
 				      ConstDecs  none
@@ -134,7 +154,7 @@ class TypeTest {
 				    END OF BLOCK
 				  END OF PROGRAM\
 				""";
-		runTest(input, output,testInfo);
+		runTest(input, output, testInfo);
 	}
 
 	@Test
@@ -483,7 +503,7 @@ class TypeTest {
 				.
 				""";
 		String output = """
-								
+
 				  PROGRAM
 				    BLOCK
 				      ConstDecs\s
@@ -546,7 +566,7 @@ class TypeTest {
 				    END OF BLOCK
 				  END OF PROGRAM\
 				""";
-		runTest(input, output,testInfo);
+		runTest(input, output, testInfo);
 	}
 
 	@Test
@@ -589,7 +609,7 @@ class TypeTest {
 				.
 				""";
 		String output = """
-								
+
 				  PROGRAM
 				    BLOCK
 				      ConstDecs\s
@@ -678,7 +698,7 @@ class TypeTest {
 				.
 				""";
 		String output = """
-								
+
 				  PROGRAM
 				    BLOCK
 				      ConstDecs\s
@@ -800,8 +820,8 @@ class TypeTest {
 				y := x+y+z
 				END
 				.
-				    
-				    
+
+
 				  PROGRAM
 				    BLOCK
 				      ConstDecs\s

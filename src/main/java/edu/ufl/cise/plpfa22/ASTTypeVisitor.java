@@ -133,10 +133,16 @@ public class ASTTypeVisitor implements ASTVisitor {
         }
         if (ident.getDec().getType() == null && expression.getType() != null) {
             // set the ident's type by expression type
+            if (expression.getType() == Type.PROCEDURE) {
+                throw new TypeCheckException("can't assign to procedures", ident.getSourceLocation());
+            }
             this.setDecType(ident.getDec(), expression.getType());
             return null;
         } else if (ident.getDec().getType() != null && expression.getType() == null) {
             // visit the expression knowing that it has this type
+            if (ident.getDec().getType() == Type.PROCEDURE) {
+                throw new TypeCheckException("can't assign to procedures", ident.getSourceLocation());
+            }
             return expression.visit(this, ident.getDec().getType());
         } else if (ident.getDec().getType() != null && expression.getType() != null) {
             // inconsistant type.
@@ -144,6 +150,9 @@ public class ASTTypeVisitor implements ASTVisitor {
                 throw new TypeCheckException("variable type error", ident.getSourceLocation());
             } else {
                 // is it possible that an expression has type but it still needs to be visited?
+                if (ident.getDec().getType() == Type.PROCEDURE) {
+                    throw new TypeCheckException("can't assign to procedures", ident.getSourceLocation());
+                }
                 return expression.visit(this, expression.getType());
             }
         } else {
