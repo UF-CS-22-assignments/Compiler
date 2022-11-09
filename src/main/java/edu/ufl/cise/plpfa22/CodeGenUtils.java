@@ -19,7 +19,7 @@ import org.objectweb.asm.util.TraceClassVisitor;
 
 import edu.ufl.cise.plpfa22.ast.Types.Type;
 
-public class CodeGenUtils{
+public class CodeGenUtils {
 
 	/**
 	 * Converts the provided byte array
@@ -35,7 +35,7 @@ public class CodeGenUtils{
 		cr.accept(new TraceClassVisitor(new PrintWriter(out)), flags);
 		return out.toString();
 	}
-	
+
 	/**
 	 * Loader for dynamically generated classes.
 	 * Instantiated by getInstance.
@@ -50,10 +50,11 @@ public class CodeGenUtils{
 			return super.defineClass(className, bytecode, 0, bytecode.length);
 		}
 	};
-	
+
 	/**
 	 * Use for debugging only.
-	 * Generates code to print the given String followed by ; to the standard output to allow observation of execution of generated program
+	 * Generates code to print the given String followed by ; to the standard output
+	 * to allow observation of execution of generated program
 	 * during development.
 	 * 
 	 * @param mv
@@ -67,28 +68,26 @@ public class CodeGenUtils{
 
 	/**
 	 * Use for debugging only
-	 * Generates code to print the value on top of the stack to the standard output without consuming it.
+	 * Generates code to print the value on top of the stack to the standard output
+	 * without consuming it.
 	 * Requires stack not empty
-     *
+	 *
 	 * @param mv
 	 * @param type
 	 */
 	public static void genDebugPrintTOS(MethodVisitor mv, Type type) {
-			mv.visitInsn(Opcodes.DUP);
+		mv.visitInsn(Opcodes.DUP);
+		mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+		mv.visitInsn(Opcodes.SWAP);
+		if (type.equals(Type.NUMBER)) {
+			mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "print", "(I)V", false);
+		} else if (type.equals(Type.BOOLEAN)) {
+			mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "print", "(Z)V", false);
+		} else if (type.equals(Type.STRING)) {
+			mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "print", "(Ljava/lang/String;)V", false);
+		} else
 			mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-			mv.visitInsn(Opcodes.SWAP);
-			if (type.equals(Type.NUMBER)) {
-				mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "print", "(I)V", false);
-			}	
-			else if (type.equals(Type.BOOLEAN)) {
-				mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "print", "(Z)V", false);
-			}
-			else if (type.equals(Type.STRING)) {
-				mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "print", "(Ljava/lang/String;)V", false);
-			}
-			else
-			mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-			mv.visitLdcInsn(";\n");
-			mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "print", "(Ljava/lang/String;)V", false);				
+		mv.visitLdcInsn(";\n");
+		mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "print", "(Ljava/lang/String;)V", false);
 	}
 }
