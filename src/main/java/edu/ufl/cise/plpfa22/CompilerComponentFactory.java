@@ -25,4 +25,8 @@ public class CompilerComponentFactory {
 		return new ASTTypeVisitor();
 	}
 
+	public static ASTVisitor getCodeGenVisitor(String className, String packageName, String string) {
+		return new CodeGenVisitor(className, packageName, string);
+	}
+
 }

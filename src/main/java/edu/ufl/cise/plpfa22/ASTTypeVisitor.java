@@ -17,6 +17,7 @@ import edu.ufl.cise.plpfa22.ast.ExpressionStringLit;
 import edu.ufl.cise.plpfa22.ast.Ident;
 import edu.ufl.cise.plpfa22.ast.ProcDec;
 import edu.ufl.cise.plpfa22.ast.Program;
+import edu.ufl.cise.plpfa22.ast.Statement;
 import edu.ufl.cise.plpfa22.ast.StatementAssign;
 import edu.ufl.cise.plpfa22.ast.StatementBlock;
 import edu.ufl.cise.plpfa22.ast.StatementCall;
@@ -25,9 +26,8 @@ import edu.ufl.cise.plpfa22.ast.StatementIf;
 import edu.ufl.cise.plpfa22.ast.StatementInput;
 import edu.ufl.cise.plpfa22.ast.StatementOutput;
 import edu.ufl.cise.plpfa22.ast.StatementWhile;
-import edu.ufl.cise.plpfa22.ast.VarDec;
 import edu.ufl.cise.plpfa22.ast.Types.Type;
-import edu.ufl.cise.plpfa22.ast.Statement;
+import edu.ufl.cise.plpfa22.ast.VarDec;
 
 public class ASTTypeVisitor implements ASTVisitor {
 
@@ -133,10 +133,16 @@ public class ASTTypeVisitor implements ASTVisitor {
         }
         if (ident.getDec().getType() == null && expression.getType() != null) {
             // set the ident's type by expression type
+            if (expression.getType() == Type.PROCEDURE) {
+                throw new TypeCheckException("can't assign to procedures", ident.getSourceLocation());
+            }
             this.setDecType(ident.getDec(), expression.getType());
             return null;
         } else if (ident.getDec().getType() != null && expression.getType() == null) {
             // visit the expression knowing that it has this type
+            if (ident.getDec().getType() == Type.PROCEDURE) {
+                throw new TypeCheckException("can't assign to procedures", ident.getSourceLocation());
+            }
             return expression.visit(this, ident.getDec().getType());
         } else if (ident.getDec().getType() != null && expression.getType() != null) {
             // inconsistant type.
@@ -144,6 +150,9 @@ public class ASTTypeVisitor implements ASTVisitor {
                 throw new TypeCheckException("variable type error", ident.getSourceLocation());
             } else {
                 // is it possible that an expression has type but it still needs to be visited?
+                if (ident.getDec().getType() == Type.PROCEDURE) {
+                    throw new TypeCheckException("can't assign to procedures", ident.getSourceLocation());
+                }
                 return expression.visit(this, expression.getType());
             }
         } else {
