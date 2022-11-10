@@ -157,39 +157,39 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 					case TIMES -> mv.visitInsn(IMUL);
 					case DIV -> mv.visitInsn(IDIV);
 					case MOD -> mv.visitInsn(IREM);
-					case EQ -> {
-						Label labelNumEqFalseBr = new Label();
-						mv.visitJumpInsn(IF_ICMPNE, labelNumEqFalseBr);
-						mv.visitInsn(ICONST_1);
-						Label labelPostNumEq = new Label();
-						mv.visitJumpInsn(GOTO, labelPostNumEq);
-						mv.visitLabel(labelNumEqFalseBr);
-						mv.visitInsn(ICONST_0);
-						mv.visitLabel(labelPostNumEq);
+					case EQ, NEQ, LT, LE, GT, GE -> {
+						compareNumberOrBoolean(mv, op);
+
 					}
-					case NEQ -> {
-						throw new UnsupportedOperationException();
-					}
-					case LT -> {
-						throw new UnsupportedOperationException();
-					}
-					case LE -> {
-						throw new UnsupportedOperationException();
-					}
-					case GT -> {
-						throw new UnsupportedOperationException();
-					}
-					case GE -> {
-						throw new UnsupportedOperationException();
-					}
+
 					default -> {
 						throw new IllegalStateException("code gen bug in visitExpressionBinary NUMBER");
 					}
 				}
-				;
+
 			}
 			case BOOLEAN -> {
-				throw new UnsupportedOperationException();
+				expressionBinary.e0.visit(this, arg);
+				expressionBinary.e1.visit(this, arg);
+				switch (op) {
+					case PLUS -> {
+						// OR
+						mv.visitInsn(IOR);
+
+					}
+					case TIMES -> {
+						// AND
+						mv.visitInsn(IAND);
+					}
+					case EQ, NEQ, LT, LE, GT, GE -> {
+						compareNumberOrBoolean(mv, op);
+
+					}
+					default -> {
+						throw new IllegalStateException("code gen bug in visitExpressionBinary BOOLEAN");
+					}
+				}
+
 			}
 			case STRING -> {
 				throw new UnsupportedOperationException();
@@ -199,6 +199,53 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * pop and compare the top two number or boolean on the stack, push back the
+	 * result in boolean
+	 * 
+	 * @param mv method visitor
+	 * @param op operation type, can only be EQ, NEQ, LT, LE, GT, GE
+	 */
+	private void compareNumberOrBoolean(MethodVisitor mv, Kind op) {
+		int comparOpcodes = switch (op) {
+			case EQ -> {
+				yield IF_ICMPEQ;
+			}
+			case NEQ -> {
+				yield IF_ICMPNE;
+			}
+			case LT -> {
+				yield IF_ICMPLT;
+			}
+			case LE -> {
+				yield IF_ICMPLE;
+			}
+			case GT -> {
+				yield IF_ICMPGT;
+			}
+			case GE -> {
+				yield IF_ICMPGE;
+			}
+			default -> {
+				throw new IllegalStateException("code gen bug in visitExpressionBinary NUMBER");
+			}
+		};
+		Label labelNumCompareTrueBranch = new Label();
+		Label labelPostNumCompareBranch = new Label();
+		// if the top two number on the stack satisfy the corresponding comparison, jump
+		// to compare true branch and push 1, other wise, push 0and jump to the end.
+		mv.visitJumpInsn(comparOpcodes, labelNumCompareTrueBranch);
+
+		// compare failed branch
+		mv.visitInsn(ICONST_0);
+		mv.visitJumpInsn(GOTO, labelPostNumCompareBranch);
+
+		// compare true branch
+		mv.visitLabel(labelNumCompareTrueBranch);
+		mv.visitInsn(ICONST_1);
+		mv.visitLabel(labelPostNumCompareBranch);
 	}
 
 	@Override
@@ -215,12 +262,18 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitExpressionStringLit(ExpressionStringLit expressionStringLit, Object arg) throws PLPException {
-		throw new UnsupportedOperationException();
+		// put the string on the top of the stack
+		MethodVisitor mv = (MethodVisitor) arg;
+		mv.visitLdcInsn(expressionStringLit.getFirstToken().getStringValue());
+		return null;
 	}
 
 	@Override
 	public Object visitExpressionBooleanLit(ExpressionBooleanLit expressionBooleanLit, Object arg) throws PLPException {
-		throw new UnsupportedOperationException();
+		// put the boolean on the top of the stack
+		MethodVisitor mv = (MethodVisitor) arg;
+		mv.visitLdcInsn(expressionBooleanLit.getFirstToken().getBooleanValue());
+		return null;
 	}
 
 	@Override

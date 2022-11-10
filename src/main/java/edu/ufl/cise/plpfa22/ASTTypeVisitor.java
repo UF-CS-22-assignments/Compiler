@@ -318,6 +318,7 @@ public class ASTTypeVisitor implements ASTVisitor {
                     throw new TypeCheckException("This expressionBinary should have BOOLEAN type",
                             expressionBinary.getFirstToken().getSourceLocation());
                 }
+                this.setExprType(expressionBinary, Type.BOOLEAN);
                 if (expression0.getType() == null) {
                     // null x null -> BOOLEAN
                     untyped = this.visitSetUntyped(expression0, null, untyped);
