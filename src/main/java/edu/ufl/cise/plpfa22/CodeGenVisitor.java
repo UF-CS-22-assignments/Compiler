@@ -157,38 +157,47 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 					case TIMES -> mv.visitInsn(IMUL);
 					case DIV -> mv.visitInsn(IDIV);
 					case MOD -> mv.visitInsn(IREM);
-					case EQ -> {
-						Label labelNumEqFalseBr = new Label();
-						mv.visitJumpInsn(IF_ICMPNE, labelNumEqFalseBr);
-						mv.visitInsn(ICONST_1);
-						Label labelPostNumEq = new Label();
-						mv.visitJumpInsn(GOTO, labelPostNumEq);
-						mv.visitLabel(labelNumEqFalseBr);
+					case EQ, NEQ, LT, LE, GT, GE -> {
+						int comparOpcodes = switch (op) {
+							case EQ -> {
+								yield IF_ICMPEQ;
+							}
+							case NEQ -> {
+								yield IF_ICMPNE;
+							}
+							case LT -> {
+								yield IF_ICMPLT;
+							}
+							case LE -> {
+								yield IF_ICMPLE;
+							}
+							case GT -> {
+								yield IF_ICMPGT;
+							}
+							case GE -> {
+								yield IF_ICMPGE;
+							}
+							default -> {
+								throw new IllegalStateException("code gen bug in visitExpressionBinary NUMBER");
+							}
+						};
+						Label labelNumCompareTrueBranch = new Label();
+						Label labelPostNumCompareBranch = new Label();
+						// if the top two number on the stack satisfy the corresponding comparison, jump
+						// to compare true branch and push 1, other wise, push 0and jump to the end.
+						mv.visitJumpInsn(comparOpcodes, labelNumCompareTrueBranch);
+
+						// compare failed branch
 						mv.visitInsn(ICONST_0);
-						mv.visitLabel(labelPostNumEq);
-					}
-					case NEQ -> {
-						Label labelNumEqFalseBr = new Label();
-						mv.visitJumpInsn(IF_ICMPNE, labelNumEqFalseBr);
-						mv.visitInsn(ICONST_0);
-						Label labelPostNumEq = new Label();
-						mv.visitJumpInsn(GOTO, labelPostNumEq);
-						mv.visitLabel(labelNumEqFalseBr);
+						mv.visitJumpInsn(GOTO, labelPostNumCompareBranch);
+
+						// compare true branch
+						mv.visitLabel(labelNumCompareTrueBranch);
 						mv.visitInsn(ICONST_1);
-						mv.visitLabel(labelPostNumEq);
+						mv.visitLabel(labelPostNumCompareBranch);
+
 					}
-					case LT -> {
-						throw new UnsupportedOperationException();
-					}
-					case LE -> {
-						throw new UnsupportedOperationException();
-					}
-					case GT -> {
-						throw new UnsupportedOperationException();
-					}
-					case GE -> {
-						throw new UnsupportedOperationException();
-					}
+
 					default -> {
 						throw new IllegalStateException("code gen bug in visitExpressionBinary NUMBER");
 					}
