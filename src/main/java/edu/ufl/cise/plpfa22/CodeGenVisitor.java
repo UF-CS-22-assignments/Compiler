@@ -168,7 +168,14 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 						mv.visitLabel(labelPostNumEq);
 					}
 					case NEQ -> {
-						throw new UnsupportedOperationException();
+						Label labelNumEqFalseBr = new Label();
+						mv.visitJumpInsn(IF_ICMPNE, labelNumEqFalseBr);
+						mv.visitInsn(ICONST_0);
+						Label labelPostNumEq = new Label();
+						mv.visitJumpInsn(GOTO, labelPostNumEq);
+						mv.visitLabel(labelNumEqFalseBr);
+						mv.visitInsn(ICONST_1);
+						mv.visitLabel(labelPostNumEq);
 					}
 					case LT -> {
 						throw new UnsupportedOperationException();
