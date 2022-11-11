@@ -8,6 +8,7 @@ import edu.ufl.cise.plpfa22.ast.ASTVisitor;
 import edu.ufl.cise.plpfa22.IToken.Kind;
 import edu.ufl.cise.plpfa22.ast.Block;
 import edu.ufl.cise.plpfa22.ast.ConstDec;
+import edu.ufl.cise.plpfa22.ast.Expression;
 import edu.ufl.cise.plpfa22.ast.ExpressionBinary;
 import edu.ufl.cise.plpfa22.ast.ExpressionBooleanLit;
 import edu.ufl.cise.plpfa22.ast.ExpressionIdent;
@@ -134,7 +135,17 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitStatementIf(StatementIf statementIf, Object arg) throws PLPException {
-		throw new UnsupportedOperationException();
+		Expression expression = statementIf.expression;
+		Statement statement = statementIf.statement;
+		MethodVisitor mv = (MethodVisitor) arg;
+		// the bool value will be stored on the top of the stack
+		expression.visit(this, arg);
+		Label labelPostIf = new Label();
+
+		mv.visitJumpInsn(IFEQ, labelPostIf);
+		statement.visit(this, arg);
+		mv.visitLabel(labelPostIf);
+		return null;
 	}
 
 	@Override
