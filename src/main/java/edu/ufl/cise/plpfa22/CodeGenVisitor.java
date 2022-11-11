@@ -203,7 +203,54 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 			}
 			case STRING -> {
-				throw new UnsupportedOperationException();
+				expressionBinary.e0.visit(this, arg);
+				expressionBinary.e1.visit(this, arg);
+				switch (op) {
+					case PLUS -> {
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat",
+								"(Ljava/lang/String;)Ljava/lang/String;", false);
+					}
+					case EQ -> {
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals",
+								"(Ljava/lang/Object;)Z", false);
+
+					}
+					case NEQ -> {
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals",
+								"(Ljava/lang/Object;)Z", false);
+						this.logicalNotTopStack(mv);
+
+					}
+					case LT -> {
+						// s0 < s1
+						// s1.startsWith(s0) && ! s0.equals(s1)
+						mv.visitVarInsn(ASTORE, 1); // s1
+						mv.visitVarInsn(ASTORE, 0); // s0
+
+						mv.visitVarInsn(ALOAD, 1); // push s1
+						mv.visitVarInsn(ALOAD, 0); // push s0
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "startsWith",
+								"(Ljava/lang/String;)Z", false); // s1.startsWith(s0)
+						mv.visitVarInsn(ALOAD, 0); // push s0
+						mv.visitVarInsn(ALOAD, 1); // push s1
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals",
+								"(Ljava/lang/Object;)Z", false); // s0.equals(s1)
+						this.logicalNotTopStack(mv); // ! s0.equals(s1)
+						mv.visitInsn(IAND); // s1.startsWith(s0) && ! s0.equals(s1)
+					}
+					case LE -> {
+						throw new UnsupportedOperationException();
+					}
+					case GT -> {
+						throw new UnsupportedOperationException();
+					}
+					case GE -> {
+						throw new UnsupportedOperationException();
+					}
+					default -> {
+						throw new UnsupportedOperationException();
+					}
+				}
 			}
 			default -> {
 				throw new IllegalStateException("code gen bug in visitExpressionBinary");

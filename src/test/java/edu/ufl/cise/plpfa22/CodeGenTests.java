@@ -329,7 +329,10 @@ public class CodeGenTests {
 				! "red" = "blue";
 				! "red"= "red";
 				! "red" # "blue";
-				! "red" # "red"
+				! "red" # "red";
+				! "cn" < "cnm";
+				! "cnm" < "cnm";
+				! "haha" < "cnm"
 				END
 				.
 				""";
