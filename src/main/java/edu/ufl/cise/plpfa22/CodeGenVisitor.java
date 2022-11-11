@@ -192,7 +192,19 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 			}
 			case STRING -> {
-				throw new UnsupportedOperationException();
+				expressionBinary.e0.visit(this, arg);
+				expressionBinary.e1.visit(this, arg);
+				switch(op) {
+					case EQ, NEQ -> {
+						Label labelNumCompareTrueBranch = new Label();
+						Label labelPostNumCompareBranch = new Label();
+
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
+					}
+					default -> {
+						throw new IllegalStateException("code gen bug in visitExpressionBinary STRING");
+					}
+				}
 			}
 			default -> {
 				throw new IllegalStateException("code gen bug in visitExpressionBinary");
