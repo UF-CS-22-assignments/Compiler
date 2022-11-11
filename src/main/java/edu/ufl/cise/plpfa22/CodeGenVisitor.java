@@ -224,19 +224,25 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 					case LT -> {
 						// s0 < s1
 						// s1.startsWith(s0) && ! s0.equals(s1)
-						mv.visitInsn(POP2); // clear stack: ...s0, s1 ->
-						expressionBinary.e1.visit(this, arg); // push s1
-						expressionBinary.e0.visit(this, arg); // push s0
-						// stack: ... s1, s0
+
+						mv.visitInsn(DUP2);
+						// stack: ... s0, s1, s0, s1
+						mv.visitInsn(DUP_X1);
+						// stack: ... s0, s1, s1, s0, s1
+						mv.visitInsn(POP);
+						// stack: ... s0, s1, s1, s0
 
 						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "startsWith",
 								"(Ljava/lang/String;)Z", false); // s1.startsWith(s0)
-						// stack: ... (s1.startsWith(s0))
-						expressionBinary.e1.visit(this, arg); // push s1
-						expressionBinary.e0.visit(this, arg); // push s0
+						// stack: ... s0, s1, (s1.startsWith(s0))
+						mv.visitInsn(DUP_X2);
+						// stack: ... (s1.startsWith(s0)), s0, s1, (s1.startsWith(s0))
+						mv.visitInsn(POP);
+						// stack: ... (s1.startsWith(s0)), s0, s1
+
 						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals",
-								"(Ljava/lang/Object;)Z", false); // s1.equals(s0)
-						// stack: ... (s1.startsWith(s0)) (s1.equals(s0))
+								"(Ljava/lang/Object;)Z", false); // s0.equals(s1)
+						// stack: ... (s1.startsWith(s0)) (s0.equals(s1))
 						this.logicalNotTopStack(mv); // ! s0.equals(s1)
 						// stack: ... (s1.startsWith(s0)) (!s1.equals(s0))
 						mv.visitInsn(IAND); // s1.startsWith(s0) && ! s0.equals(s1)
