@@ -213,6 +213,31 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	}
 
 	/**
+	 * negate the top element on the stack.
+	 * The stack must be not empty and top element must be a boolean, but this
+	 * method won't check it.
+	 * 
+	 * if stack.pop() == 0, GOTO pushTrue
+	 * push 0
+	 * GOTO end
+	 * label: pushTrue
+	 * push 1
+	 * label: end
+	 * 
+	 * @param mv
+	 */
+	private void logicalNotTopStack(MethodVisitor mv) {
+		Label pushTrue = new Label();
+		Label end = new Label();
+		mv.visitJumpInsn(IFEQ, pushTrue);
+		mv.visitInsn(ICONST_0);
+		mv.visitJumpInsn(GOTO, end);
+		mv.visitLabel(pushTrue);
+		mv.visitInsn(ICONST_1);
+		mv.visitLabel(end);
+	}
+
+	/**
 	 * pop and compare the top two number or boolean on the stack, push back the
 	 * result in boolean
 	 * 
