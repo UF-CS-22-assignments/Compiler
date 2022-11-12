@@ -199,53 +199,14 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
 					}
 					case LT, GT -> {
-						mv.visitVarInsn(ASTORE, 1);
-						mv.visitVarInsn(ASTORE, 2);
-						mv.visitVarInsn(ALOAD, 1);
-						mv.visitVarInsn(ALOAD, 2);
-						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "startsWith", "(Ljava/lang/String;)Z", false);
-						mv.visitVarInsn(ALOAD, 1);
-						mv.visitVarInsn(ALOAD, 2);
-						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
-						Label label1 = new Label();
-						mv.visitJumpInsn(IFNE, label1);
-						mv.visitInsn(ICONST_1);
-						Label label2 = new Label();
-						mv.visitJumpInsn(GOTO, label2);
-						mv.visitLabel(label1);
-						mv.visitInsn(ICONST_0);
-						mv.visitLabel(label2);
-						Label label3 = new Label();
-						mv.visitJumpInsn(IF_ICMPNE, label3);
-						mv.visitInsn(ICONST_1);
-						Label label4 = new Label();
-						mv.visitJumpInsn(GOTO, label4);
-						mv.visitLabel(label3);
-						mv.visitInsn(ICONST_0);
-						mv.visitLabel(label4);
 					}
 					case LE, GE -> {
-						mv.visitVarInsn(ASTORE, 1);
-						mv.visitVarInsn(ASTORE, 2);
-						mv.visitVarInsn(ALOAD, 1);
-						mv.visitVarInsn(ALOAD, 2);
-						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "startsWith", "(Ljava/lang/String;)Z", false);
-						mv.visitVarInsn(ALOAD, 1);
-						mv.visitVarInsn(ALOAD, 2);
-						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
-						Label label1 = new Label();
-						mv.visitJumpInsn(IF_ICMPNE, label1);
-						mv.visitInsn(ICONST_1);
-						Label label2 = new Label();
-						mv.visitJumpInsn(GOTO, label2);
-						mv.visitLabel(label1);
-						mv.visitInsn(ICONST_0);
-						mv.visitLabel(label2);
 					}
 					default -> {
 						throw new IllegalStateException("code gen bug in visitExpressionBinary STRING");
 					}
 				}
+				throw new UnsupportedOperationException();
 			}
 			default -> {
 				throw new IllegalStateException("code gen bug in visitExpressionBinary");
