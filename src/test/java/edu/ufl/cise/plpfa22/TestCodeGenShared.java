@@ -17,7 +17,7 @@ public class TestCodeGenShared {
     /**
      * Generates a classfile for the given source program. The classfile has the
      * given name and package.
-     * 
+     *
      * @param input
      * @param className
      * @param packageName
@@ -48,9 +48,9 @@ public class TestCodeGenShared {
      * Executes indicated method defined in bytecode and returns the result. args is
      * an Object[] containing the parameters of the method, or may be null if the
      * method does not have parameters.
-     * 
+     *
      * Requires that the given method is not overloaded in the class file.
-     * 
+     *
      * @param bytecode
      * @param className
      * @param methodName

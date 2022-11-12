@@ -225,6 +225,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 						// s0 < s1
 						// s1.startsWith(s0) && ! s0.equals(s1)
 
+						
 						mv.visitInsn(DUP2);
 						// stack: ... s0, s1, s0, s1
 						mv.visitInsn(DUP_X1);
@@ -249,13 +250,35 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 						// stack: ... ((s1.startsWith(s0)) && (!s1.equals(s0)))
 					}
 					case LE -> {
-						throw new UnsupportedOperationException();
+						mv.visitInsn(SWAP);
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "startsWith",
+								"(Ljava/lang/String;)Z", false); // s1.startsWith(s0)
 					}
 					case GT -> {
-						throw new UnsupportedOperationException();
+						//s0 > s1
+						// s0.endswith(s1) && ! s0.equals(s1)
+
+						mv.visitInsn(DUP2);
+						//stack: ... s0, s1, s0, s1
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "endsWith",
+								"(Ljava/lang/String;)Z", false); // s0.endsWith(s1)
+						//stack: ... s0, s1, (s0.endsWith(s1))
+						mv.visitInsn(DUP_X2);
+						//stack: ...(s0.endsWith(s1)), s0, s1, (s0.endsWith(s1))
+						mv.visitInsn(POP);
+						//stack: ... (s0.endsWith(s1)), s0, s1
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals",
+								"(Ljava/lang/Object;)Z", false); // s0.equals(s1)
+						// stack: ... (s0.endsWith(s1)), (s0.equals(s1))
+						this.logicalNotTopStack(mv); // !s0.equals(s1)
+						//stack: ...(s0.endsWith(s1)), (!s0.equals(s1))
+						mv.visitInsn(IAND);
+						// stack: ... ((s0.endsWith(s1)) && (!s0.equals(s1)))
+
 					}
 					case GE -> {
-						throw new UnsupportedOperationException();
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "endsWith",
+								"(Ljava/lang/String;)Z", false); // s0.endsWith(s1)
 					}
 					default -> {
 						throw new UnsupportedOperationException();
@@ -273,14 +296,14 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	 * negate the top element on the stack.
 	 * The stack must be not empty and top element must be a boolean, but this
 	 * method won't check it.
-	 * 
+	 *
 	 * if stack.pop() == 0, GOTO pushTrue
 	 * push 0
 	 * GOTO end
 	 * label: pushTrue
 	 * push 1
 	 * label: end
-	 * 
+	 *
 	 * @param mv
 	 */
 	private void logicalNotTopStack(MethodVisitor mv) {
@@ -297,7 +320,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	/**
 	 * pop and compare the top two number or boolean on the stack, push back the
 	 * result in boolean
-	 * 
+	 *
 	 * @param mv method visitor
 	 * @param op operation type, can only be EQ, NEQ, LT, LE, GT, GE
 	 */
