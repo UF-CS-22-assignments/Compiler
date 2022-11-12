@@ -250,13 +250,35 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 						// stack: ... ((s1.startsWith(s0)) && (!s1.equals(s0)))
 					}
 					case LE -> {
-						throw new UnsupportedOperationException();
+						mv.visitInsn(SWAP);
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "startsWith",
+								"(Ljava/lang/String;)Z", false); // s1.startsWith(s0)
 					}
 					case GT -> {
-						throw new UnsupportedOperationException();
+						//s0 > s1
+						// s0.endswith(s1) && ! s0.equals(s1)
+
+						mv.visitInsn(DUP2);
+						//stack: ... s0, s1, s0, s1
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "endsWith",
+								"(Ljava/lang/String;)Z", false); // s0.endsWith(s1)
+						//stack: ... s0, s1, (s0.endsWith(s1))
+						mv.visitInsn(DUP_X2);
+						//stack: ...(s0.endsWith(s1)), s0, s1, (s0.endsWith(s1))
+						mv.visitInsn(POP);
+						//stack: ... (s0.endsWith(s1)), s0, s1
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals",
+								"(Ljava/lang/Object;)Z", false); // s0.equals(s1)
+						// stack: ... (s0.endsWith(s1)), (s0.equals(s1))
+						this.logicalNotTopStack(mv); // !s0.equals(s1)
+						//stack: ...(s0.endsWith(s1)), (!s0.equals(s1))
+						mv.visitInsn(IAND);
+						// stack: ... ((s0.endsWith(s1)) && (!s0.equals(s1)))
+
 					}
 					case GE -> {
-						throw new UnsupportedOperationException();
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "endsWith",
+								"(Ljava/lang/String;)Z", false); // s0.endsWith(s1)
 					}
 					default -> {
 						throw new UnsupportedOperationException();

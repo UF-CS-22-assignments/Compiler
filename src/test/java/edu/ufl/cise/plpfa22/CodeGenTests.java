@@ -13,7 +13,7 @@ public class CodeGenTests {
 	/**
 	 * Generates a classfile for the given source program. The classfile has the
 	 * given name and package.
-	 * 
+	 *
 	 * @param input
 	 * @param className
 	 * @param packageName
@@ -38,9 +38,9 @@ public class CodeGenTests {
 	 * Executes indicated method defined in bytecode and returns the result. args is
 	 * an Object[] containing the parameters of the method, or may be null if the
 	 * method does not have parameters.
-	 * 
+	 *
 	 * Requires that the given method is not overloaded in the class file.
-	 * 
+	 *
 	 * @param bytecode
 	 * @param className
 	 * @param methodName
@@ -300,6 +300,27 @@ public class CodeGenTests {
 		loadClassAndRunMethod(bytecode, className, "main", args);
 	}
 
+	@DisplayName("intRelOps")
+	@Test
+	public void testIf(TestInfo testInfo) throws Exception {
+		String input = """
+				BEGIN
+				IF 1 = 1 THEN ! "haha";
+				IF 1 # 1 THEN ! "cnm"
+				END
+				.
+				""";
+
+		String shortClassName = "prog";
+		String JVMpackageName = "edu/ufl/cise/plpfa22";
+		byte[] bytecode = compile(input, shortClassName, JVMpackageName);
+		show(CodeGenUtils.bytecodeToString(bytecode));
+
+		Object[] args = new Object[1];
+		String className = "edu.ufl.cise.plpfa22.prog";
+		loadClassAndRunMethod(bytecode, className, "main", args);
+	}
+
 	@DisplayName("stringEqOps")
 	@Test
 	public void stringEqOps(TestInfo testInfo) throws Exception {
@@ -308,7 +329,10 @@ public class CodeGenTests {
 				! "red" = "blue";
 				! "red"= "red";
 				! "red" # "blue";
-				! "red" # "red"
+				! "red" # "red";
+				! "cn" < "cnm";
+				! "cnm" < "cnm";
+				! "haha" < "cnm"
 				END
 				.
 				""";
@@ -340,11 +364,12 @@ public class CodeGenTests {
 				! "FALSE" < "FA";
 				! "FALSE" <= "FA";
 				! "FALSE" > "FA";
-				! "FALSE" >= "FA"	;
+				! "FALSE" >= "FA";
 				! "FA" < "FA";
 				! "FA" <= "FA";
 				! "FA" > "FA";
-				! "FA" >= "FA"
+				! "FA" >= "FA";
+				! "True" >= "rue"
 				END
 				.
 				""";
