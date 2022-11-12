@@ -300,6 +300,27 @@ public class CodeGenTests {
 		loadClassAndRunMethod(bytecode, className, "main", args);
 	}
 
+	@DisplayName("intRelOps")
+	@Test
+	public void testIf(TestInfo testInfo) throws Exception {
+		String input = """
+				BEGIN
+				IF 1 = 1 THEN ! "haha";
+				IF 1 # 1 THEN ! "cnm"
+				END
+				.
+				""";
+
+		String shortClassName = "prog";
+		String JVMpackageName = "edu/ufl/cise/plpfa22";
+		byte[] bytecode = compile(input, shortClassName, JVMpackageName);
+		show(CodeGenUtils.bytecodeToString(bytecode));
+
+		Object[] args = new Object[1];
+		String className = "edu.ufl.cise.plpfa22.prog";
+		loadClassAndRunMethod(bytecode, className, "main", args);
+	}
+
 	@DisplayName("stringEqOps")
 	@Test
 	public void stringEqOps(TestInfo testInfo) throws Exception {
@@ -308,7 +329,10 @@ public class CodeGenTests {
 				! "red" = "blue";
 				! "red"= "red";
 				! "red" # "blue";
-				! "red" # "red"
+				! "red" # "red";
+				! "cn" < "cnm";
+				! "cnm" < "cnm";
+				! "haha" < "cnm"
 				END
 				.
 				""";
