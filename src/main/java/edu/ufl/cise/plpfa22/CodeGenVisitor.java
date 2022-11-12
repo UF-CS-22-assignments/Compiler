@@ -192,20 +192,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 			}
 			case STRING -> {
-				expressionBinary.e0.visit(this, arg);
-				expressionBinary.e1.visit(this, arg);
-				switch(op) {
-					case EQ, NEQ -> {
-						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
-					}
-					case LT, GT -> {
-					}
-					case LE, GE -> {
-					}
-					default -> {
-						throw new IllegalStateException("code gen bug in visitExpressionBinary STRING");
-					}
-				}
+
 				throw new UnsupportedOperationException();
 			}
 			default -> {
