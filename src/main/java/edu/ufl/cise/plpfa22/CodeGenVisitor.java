@@ -192,8 +192,104 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 			}
 			case STRING -> {
-
-				throw new UnsupportedOperationException();
+				expressionBinary.e0.visit(this, arg);
+				expressionBinary.e1.visit(this, arg);
+				switch(op) {
+					case EQ -> {
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
+					}
+					case NEQ -> {
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
+						Label label1 = new Label();
+						mv.visitJumpInsn(IFNE, label1);
+						mv.visitInsn(ICONST_1);
+						Label label2 = new Label();
+						mv.visitJumpInsn(GOTO, label2);
+						mv.visitLabel(label1);
+						mv.visitInsn(ICONST_0);
+						mv.visitLabel(label2);
+					}
+					case LT -> {
+						mv.visitVarInsn(ASTORE, 1);
+						mv.visitVarInsn(ASTORE, 2);
+						mv.visitVarInsn(ALOAD, 1);
+						mv.visitVarInsn(ALOAD, 2);
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "startsWith", "(Ljava/lang/String;)Z", false);
+						mv.visitVarInsn(ALOAD, 1);
+						mv.visitVarInsn(ALOAD, 2);
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
+						Label label1 = new Label();
+						mv.visitJumpInsn(IFNE, label1);
+						mv.visitInsn(ICONST_1);
+						Label label2 = new Label();
+						mv.visitJumpInsn(GOTO, label2);
+						mv.visitLabel(label1);
+						mv.visitInsn(ICONST_0);
+						mv.visitLabel(label2);
+						Label label3 = new Label();
+						mv.visitJumpInsn(IF_ICMPNE, label3);
+						mv.visitInsn(ICONST_1);
+						Label label4 = new Label();
+						mv.visitJumpInsn(GOTO, label4);
+						mv.visitLabel(label3);
+						mv.visitInsn(ICONST_0);
+						mv.visitLabel(label4);
+					}
+					case GT -> {
+						mv.visitVarInsn(ASTORE, 1);
+						mv.visitVarInsn(ASTORE, 2);
+						mv.visitVarInsn(ALOAD, 1);
+						mv.visitVarInsn(ALOAD, 2);
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "endsWith", "(Ljava/lang/String;)Z", false);
+						mv.visitVarInsn(ALOAD, 1);
+						mv.visitVarInsn(ALOAD, 2);
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
+						Label label3 = new Label();
+						mv.visitJumpInsn(IF_ICMPEQ, label3);
+						mv.visitInsn(ICONST_1);
+						Label label4 = new Label();
+						mv.visitJumpInsn(GOTO, label4);
+						mv.visitLabel(label3);
+						mv.visitInsn(ICONST_0);
+						mv.visitLabel(label4);
+					}
+					case GE -> {
+						mv.visitVarInsn(ASTORE, 1);
+						mv.visitVarInsn(ASTORE, 2);
+						mv.visitVarInsn(ALOAD, 1);
+						mv.visitVarInsn(ALOAD, 2);
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "endsWith", "(Ljava/lang/String;)Z", false);
+						mv.visitVarInsn(ALOAD, 1);
+						mv.visitVarInsn(ALOAD, 2);
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
+						Label label3 = new Label();
+						mv.visitJumpInsn(IFNE, label3);
+						mv.visitInsn(ICONST_1);
+						Label label4 = new Label();
+						mv.visitJumpInsn(GOTO, label4);
+						mv.visitLabel(label3);
+						mv.visitInsn(ICONST_0);
+						mv.visitLabel(label4);
+						Label label5 = new Label();
+						mv.visitJumpInsn(IF_ICMPEQ, label5);
+						mv.visitInsn(ICONST_1);
+						Label label6 = new Label();
+						mv.visitJumpInsn(GOTO, label6);
+						mv.visitLabel(label5);
+						mv.visitInsn(ICONST_0);
+						mv.visitLabel(label6);
+					}
+					case LE -> {
+						mv.visitVarInsn(ASTORE, 1);
+						mv.visitVarInsn(ASTORE, 2);
+						mv.visitVarInsn(ALOAD, 1);
+						mv.visitVarInsn(ALOAD, 2);
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "startsWith", "(Ljava/lang/String;)Z", false);
+					}
+					default -> {
+						throw new IllegalStateException("code gen bug in visitExpressionBinary STRING");
+					}
+				}
 			}
 			default -> {
 				throw new IllegalStateException("code gen bug in visitExpressionBinary");
