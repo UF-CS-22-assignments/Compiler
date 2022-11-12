@@ -8,6 +8,7 @@ import edu.ufl.cise.plpfa22.ast.ASTVisitor;
 import edu.ufl.cise.plpfa22.IToken.Kind;
 import edu.ufl.cise.plpfa22.ast.Block;
 import edu.ufl.cise.plpfa22.ast.ConstDec;
+import edu.ufl.cise.plpfa22.ast.Expression;
 import edu.ufl.cise.plpfa22.ast.ExpressionBinary;
 import edu.ufl.cise.plpfa22.ast.ExpressionBooleanLit;
 import edu.ufl.cise.plpfa22.ast.ExpressionIdent;
@@ -134,7 +135,17 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitStatementIf(StatementIf statementIf, Object arg) throws PLPException {
-		throw new UnsupportedOperationException();
+		Expression expression = statementIf.expression;
+		Statement statement = statementIf.statement;
+		MethodVisitor mv = (MethodVisitor) arg;
+		// the bool value will be stored on the top of the stack
+		expression.visit(this, arg);
+		Label labelPostIf = new Label();
+
+		mv.visitJumpInsn(IFEQ, labelPostIf);
+		statement.visit(this, arg);
+		mv.visitLabel(labelPostIf);
+		return null;
 	}
 
 	@Override
@@ -194,100 +205,60 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 			case STRING -> {
 				expressionBinary.e0.visit(this, arg);
 				expressionBinary.e1.visit(this, arg);
-				switch(op) {
+				switch (op) {
+					case PLUS -> {
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat",
+								"(Ljava/lang/String;)Ljava/lang/String;", false);
+					}
 					case EQ -> {
-						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals",
+								"(Ljava/lang/Object;)Z", false);
+
 					}
 					case NEQ -> {
-						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
-						Label label1 = new Label();
-						mv.visitJumpInsn(IFNE, label1);
-						mv.visitInsn(ICONST_1);
-						Label label2 = new Label();
-						mv.visitJumpInsn(GOTO, label2);
-						mv.visitLabel(label1);
-						mv.visitInsn(ICONST_0);
-						mv.visitLabel(label2);
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals",
+								"(Ljava/lang/Object;)Z", false);
+						this.logicalNotTopStack(mv);
+
 					}
 					case LT -> {
-						mv.visitVarInsn(ASTORE, 1);
-						mv.visitVarInsn(ASTORE, 2);
-						mv.visitVarInsn(ALOAD, 1);
-						mv.visitVarInsn(ALOAD, 2);
-						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "startsWith", "(Ljava/lang/String;)Z", false);
-						mv.visitVarInsn(ALOAD, 1);
-						mv.visitVarInsn(ALOAD, 2);
-						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
-						Label label1 = new Label();
-						mv.visitJumpInsn(IFNE, label1);
-						mv.visitInsn(ICONST_1);
-						Label label2 = new Label();
-						mv.visitJumpInsn(GOTO, label2);
-						mv.visitLabel(label1);
-						mv.visitInsn(ICONST_0);
-						mv.visitLabel(label2);
-						Label label3 = new Label();
-						mv.visitJumpInsn(IF_ICMPNE, label3);
-						mv.visitInsn(ICONST_1);
-						Label label4 = new Label();
-						mv.visitJumpInsn(GOTO, label4);
-						mv.visitLabel(label3);
-						mv.visitInsn(ICONST_0);
-						mv.visitLabel(label4);
-					}
-					case GT -> {
-						mv.visitVarInsn(ASTORE, 1);
-						mv.visitVarInsn(ASTORE, 2);
-						mv.visitVarInsn(ALOAD, 1);
-						mv.visitVarInsn(ALOAD, 2);
-						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "endsWith", "(Ljava/lang/String;)Z", false);
-						mv.visitVarInsn(ALOAD, 1);
-						mv.visitVarInsn(ALOAD, 2);
-						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
-						Label label3 = new Label();
-						mv.visitJumpInsn(IF_ICMPEQ, label3);
-						mv.visitInsn(ICONST_1);
-						Label label4 = new Label();
-						mv.visitJumpInsn(GOTO, label4);
-						mv.visitLabel(label3);
-						mv.visitInsn(ICONST_0);
-						mv.visitLabel(label4);
-					}
-					case GE -> {
-						mv.visitVarInsn(ASTORE, 1);
-						mv.visitVarInsn(ASTORE, 2);
-						mv.visitVarInsn(ALOAD, 1);
-						mv.visitVarInsn(ALOAD, 2);
-						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "endsWith", "(Ljava/lang/String;)Z", false);
-						mv.visitVarInsn(ALOAD, 1);
-						mv.visitVarInsn(ALOAD, 2);
-						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
-						Label label3 = new Label();
-						mv.visitJumpInsn(IFNE, label3);
-						mv.visitInsn(ICONST_1);
-						Label label4 = new Label();
-						mv.visitJumpInsn(GOTO, label4);
-						mv.visitLabel(label3);
-						mv.visitInsn(ICONST_0);
-						mv.visitLabel(label4);
-						Label label5 = new Label();
-						mv.visitJumpInsn(IF_ICMPEQ, label5);
-						mv.visitInsn(ICONST_1);
-						Label label6 = new Label();
-						mv.visitJumpInsn(GOTO, label6);
-						mv.visitLabel(label5);
-						mv.visitInsn(ICONST_0);
-						mv.visitLabel(label6);
+						// s0 < s1
+						// s1.startsWith(s0) && ! s0.equals(s1)
+
+						mv.visitInsn(DUP2);
+						// stack: ... s0, s1, s0, s1
+						mv.visitInsn(DUP_X1);
+						// stack: ... s0, s1, s1, s0, s1
+						mv.visitInsn(POP);
+						// stack: ... s0, s1, s1, s0
+
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "startsWith",
+								"(Ljava/lang/String;)Z", false); // s1.startsWith(s0)
+						// stack: ... s0, s1, (s1.startsWith(s0))
+						mv.visitInsn(DUP_X2);
+						// stack: ... (s1.startsWith(s0)), s0, s1, (s1.startsWith(s0))
+						mv.visitInsn(POP);
+						// stack: ... (s1.startsWith(s0)), s0, s1
+
+						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals",
+								"(Ljava/lang/Object;)Z", false); // s0.equals(s1)
+						// stack: ... (s1.startsWith(s0)) (s0.equals(s1))
+						this.logicalNotTopStack(mv); // ! s0.equals(s1)
+						// stack: ... (s1.startsWith(s0)) (!s1.equals(s0))
+						mv.visitInsn(IAND); // s1.startsWith(s0) && ! s0.equals(s1)
+						// stack: ... ((s1.startsWith(s0)) && (!s1.equals(s0)))
 					}
 					case LE -> {
-						mv.visitVarInsn(ASTORE, 1);
-						mv.visitVarInsn(ASTORE, 2);
-						mv.visitVarInsn(ALOAD, 1);
-						mv.visitVarInsn(ALOAD, 2);
-						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "startsWith", "(Ljava/lang/String;)Z", false);
+						throw new UnsupportedOperationException();
+					}
+					case GT -> {
+						throw new UnsupportedOperationException();
+					}
+					case GE -> {
+						throw new UnsupportedOperationException();
 					}
 					default -> {
-						throw new IllegalStateException("code gen bug in visitExpressionBinary STRING");
+						throw new UnsupportedOperationException();
 					}
 				}
 			}
@@ -299,9 +270,34 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	}
 
 	/**
+	 * negate the top element on the stack.
+	 * The stack must be not empty and top element must be a boolean, but this
+	 * method won't check it.
+	 *
+	 * if stack.pop() == 0, GOTO pushTrue
+	 * push 0
+	 * GOTO end
+	 * label: pushTrue
+	 * push 1
+	 * label: end
+	 *
+	 * @param mv
+	 */
+	private void logicalNotTopStack(MethodVisitor mv) {
+		Label pushTrue = new Label();
+		Label end = new Label();
+		mv.visitJumpInsn(IFEQ, pushTrue);
+		mv.visitInsn(ICONST_0);
+		mv.visitJumpInsn(GOTO, end);
+		mv.visitLabel(pushTrue);
+		mv.visitInsn(ICONST_1);
+		mv.visitLabel(end);
+	}
+
+	/**
 	 * pop and compare the top two number or boolean on the stack, push back the
 	 * result in boolean
-	 * 
+	 *
 	 * @param mv method visitor
 	 * @param op operation type, can only be EQ, NEQ, LT, LE, GT, GE
 	 */
