@@ -225,6 +225,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 						// s0 < s1
 						// s1.startsWith(s0) && ! s0.equals(s1)
 
+						
 						mv.visitInsn(DUP2);
 						// stack: ... s0, s1, s0, s1
 						mv.visitInsn(DUP_X1);
