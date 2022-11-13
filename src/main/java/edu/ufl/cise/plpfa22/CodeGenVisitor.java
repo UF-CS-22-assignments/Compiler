@@ -225,12 +225,9 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 						// s0 < s1
 						// s1.startsWith(s0) && ! s0.equals(s1)
 
-						
 						mv.visitInsn(DUP2);
 						// stack: ... s0, s1, s0, s1
-						mv.visitInsn(DUP_X1);
-						// stack: ... s0, s1, s1, s0, s1
-						mv.visitInsn(POP);
+						mv.visitInsn(SWAP);
 						// stack: ... s0, s1, s1, s0
 
 						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "startsWith",
@@ -243,9 +240,9 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals",
 								"(Ljava/lang/Object;)Z", false); // s0.equals(s1)
-						// stack: ... (s1.startsWith(s0)) (s0.equals(s1))
+						// stack: ... (s1.startsWith(s0)), (s0.equals(s1))
 						this.logicalNotTopStack(mv); // ! s0.equals(s1)
-						// stack: ... (s1.startsWith(s0)) (!s1.equals(s0))
+						// stack: ... (s1.startsWith(s0)), (!s1.equals(s0))
 						mv.visitInsn(IAND); // s1.startsWith(s0) && ! s0.equals(s1)
 						// stack: ... ((s1.startsWith(s0)) && (!s1.equals(s0)))
 					}
@@ -255,23 +252,23 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 								"(Ljava/lang/String;)Z", false); // s1.startsWith(s0)
 					}
 					case GT -> {
-						//s0 > s1
+						// s0 > s1
 						// s0.endswith(s1) && ! s0.equals(s1)
 
 						mv.visitInsn(DUP2);
-						//stack: ... s0, s1, s0, s1
+						// stack: ... s0, s1, s0, s1
 						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "endsWith",
 								"(Ljava/lang/String;)Z", false); // s0.endsWith(s1)
-						//stack: ... s0, s1, (s0.endsWith(s1))
+						// stack: ... s0, s1, (s0.endsWith(s1))
 						mv.visitInsn(DUP_X2);
-						//stack: ...(s0.endsWith(s1)), s0, s1, (s0.endsWith(s1))
+						// stack: ...(s0.endsWith(s1)), s0, s1, (s0.endsWith(s1))
 						mv.visitInsn(POP);
-						//stack: ... (s0.endsWith(s1)), s0, s1
+						// stack: ... (s0.endsWith(s1)), s0, s1
 						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals",
 								"(Ljava/lang/Object;)Z", false); // s0.equals(s1)
 						// stack: ... (s0.endsWith(s1)), (s0.equals(s1))
 						this.logicalNotTopStack(mv); // !s0.equals(s1)
-						//stack: ...(s0.endsWith(s1)), (!s0.equals(s1))
+						// stack: ...(s0.endsWith(s1)), (!s0.equals(s1))
 						mv.visitInsn(IAND);
 						// stack: ... ((s0.endsWith(s1)) && (!s0.equals(s1)))
 
