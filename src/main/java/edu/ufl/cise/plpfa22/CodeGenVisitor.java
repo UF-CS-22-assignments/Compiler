@@ -1,5 +1,8 @@
 package edu.ufl.cise.plpfa22;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -28,6 +31,7 @@ import edu.ufl.cise.plpfa22.ast.StatementOutput;
 import edu.ufl.cise.plpfa22.ast.StatementWhile;
 import edu.ufl.cise.plpfa22.ast.Types.Type;
 import edu.ufl.cise.plpfa22.ast.VarDec;
+import edu.ufl.cise.plpfa22.CodeGenUtils.GenClass;
 
 public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
@@ -90,7 +94,11 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		// finish up the class
 		classWriter.visitEnd();
 		// return the bytes making up the classfile
-		return classWriter.toByteArray();
+		List<GenClass> genClasses = new ArrayList<>();
+		genClasses.add(new GenClass(CodeGenUtils.toJMVClassName(this.packageName + '/' + this.className),
+				classWriter.toByteArray()));
+
+		return genClasses;
 	}
 
 	@Override
