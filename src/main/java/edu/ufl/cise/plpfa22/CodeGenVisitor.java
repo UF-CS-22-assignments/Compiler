@@ -1,5 +1,8 @@
 package edu.ufl.cise.plpfa22;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -28,6 +31,7 @@ import edu.ufl.cise.plpfa22.ast.StatementOutput;
 import edu.ufl.cise.plpfa22.ast.StatementWhile;
 import edu.ufl.cise.plpfa22.ast.Types.Type;
 import edu.ufl.cise.plpfa22.ast.VarDec;
+import edu.ufl.cise.plpfa22.CodeGenUtils.GenClass;
 
 public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
@@ -90,7 +94,11 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		// finish up the class
 		classWriter.visitEnd();
 		// return the bytes making up the classfile
-		return classWriter.toByteArray();
+		List<GenClass> genClasses = new ArrayList<>();
+		genClasses.add(new GenClass(CodeGenUtils.toJMVClassName(this.packageName + '/' + this.className),
+				classWriter.toByteArray()));
+
+		return genClasses;
 	}
 
 	@Override
@@ -225,12 +233,9 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 						// s0 < s1
 						// s1.startsWith(s0) && ! s0.equals(s1)
 
-						
 						mv.visitInsn(DUP2);
 						// stack: ... s0, s1, s0, s1
-						mv.visitInsn(DUP_X1);
-						// stack: ... s0, s1, s1, s0, s1
-						mv.visitInsn(POP);
+						mv.visitInsn(SWAP);
 						// stack: ... s0, s1, s1, s0
 
 						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "startsWith",
@@ -243,9 +248,9 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals",
 								"(Ljava/lang/Object;)Z", false); // s0.equals(s1)
-						// stack: ... (s1.startsWith(s0)) (s0.equals(s1))
+						// stack: ... (s1.startsWith(s0)), (s0.equals(s1))
 						this.logicalNotTopStack(mv); // ! s0.equals(s1)
-						// stack: ... (s1.startsWith(s0)) (!s1.equals(s0))
+						// stack: ... (s1.startsWith(s0)), (!s1.equals(s0))
 						mv.visitInsn(IAND); // s1.startsWith(s0) && ! s0.equals(s1)
 						// stack: ... ((s1.startsWith(s0)) && (!s1.equals(s0)))
 					}
@@ -255,23 +260,23 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 								"(Ljava/lang/String;)Z", false); // s1.startsWith(s0)
 					}
 					case GT -> {
-						//s0 > s1
+						// s0 > s1
 						// s0.endswith(s1) && ! s0.equals(s1)
 
 						mv.visitInsn(DUP2);
-						//stack: ... s0, s1, s0, s1
+						// stack: ... s0, s1, s0, s1
 						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "endsWith",
 								"(Ljava/lang/String;)Z", false); // s0.endsWith(s1)
-						//stack: ... s0, s1, (s0.endsWith(s1))
+						// stack: ... s0, s1, (s0.endsWith(s1))
 						mv.visitInsn(DUP_X2);
-						//stack: ...(s0.endsWith(s1)), s0, s1, (s0.endsWith(s1))
+						// stack: ...(s0.endsWith(s1)), s0, s1, (s0.endsWith(s1))
 						mv.visitInsn(POP);
-						//stack: ... (s0.endsWith(s1)), s0, s1
+						// stack: ... (s0.endsWith(s1)), s0, s1
 						mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals",
 								"(Ljava/lang/Object;)Z", false); // s0.equals(s1)
 						// stack: ... (s0.endsWith(s1)), (s0.equals(s1))
 						this.logicalNotTopStack(mv); // !s0.equals(s1)
-						//stack: ...(s0.endsWith(s1)), (!s0.equals(s1))
+						// stack: ...(s0.endsWith(s1)), (!s0.equals(s1))
 						mv.visitInsn(IAND);
 						// stack: ... ((s0.endsWith(s1)) && (!s0.equals(s1)))
 
