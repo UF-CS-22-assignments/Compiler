@@ -67,9 +67,6 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		}
 		// add instructions from statement to method
 		block.statement.visit(this, arg);
-		methodVisitor.visitInsn(RETURN);
-		methodVisitor.visitMaxs(0, 0);
-		methodVisitor.visitEnd();
 		return null;
 
 	}
@@ -139,6 +136,8 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		Label labelRun1 = new Label();
 		methodVisitorRun.visitLabel(labelRun1);
 		methodVisitorRun.visitLocalVariable("this", this.classDesc, null, labelRun0, labelRun1, 0);
+		methodVisitorRun.visitMaxs(0, 0);
+		methodVisitorRun.visitEnd();
 
 		// return the bytes making up the classfile
 		List<GenClass> genClasses = new ArrayList<>();
