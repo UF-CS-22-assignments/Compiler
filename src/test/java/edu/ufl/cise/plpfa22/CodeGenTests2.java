@@ -134,7 +134,7 @@ public class CodeGenTests2 {
 	@Test
 	public void booleanOut(TestInfo testInfo) throws Exception {
 		String input = """
-				! TRUE
+				! T | ClassWriter.COMPUTE_MAXSRUE
 				.
 				""";
 		String shortClassName = "prog";

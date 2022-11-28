@@ -55,7 +55,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	@Override
 	public Object visitBlock(Block block, Object arg) throws PLPException {
 		MethodVisitor methodVisitor = (MethodVisitor) arg;
-		methodVisitor.visitCode();
+
 		for (ConstDec constDec : block.constDecs) {
 			constDec.visit(this, null);
 		}
@@ -88,15 +88,57 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		// but you will be able to print it so you can see the instructions. After
 		// fixing,
 		// restore ClassWriter.COMPUTE_FRAMES
-		classWriter.visit(V18, ACC_PUBLIC | ACC_SUPER, fullyQualifiedClassName, null, "java/lang/Object", null);
+		classWriter.visit(V18, ACC_PUBLIC | ACC_SUPER, fullyQualifiedClassName, null, "java/lang/Object",
+				new String[] { "java/lang/Runnable" });
 
-		// get a method visitor for the main method.
-		MethodVisitor methodVisitor = classWriter.visitMethod(ACC_PUBLIC | ACC_STATIC, "main", "([Ljava/lang/String;)V",
+		// init method
+		MethodVisitor methodVisitorInit = classWriter.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+		// call the constructor of its super class.
+		methodVisitorInit.visitCode();
+		Label labelInit0 = new Label();
+		methodVisitorInit.visitLabel(labelInit0);
+		methodVisitorInit.visitVarInsn(ALOAD, 0);
+		methodVisitorInit.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+		methodVisitorInit.visitInsn(RETURN);
+		Label labelInit1 = new Label();
+		methodVisitorInit.visitLabel(labelInit1);
+		methodVisitorInit.visitLocalVariable("this", this.classDesc, null, labelInit0, labelInit1, 0);
+		methodVisitorInit.visitMaxs(1, 1);
+		methodVisitorInit.visitEnd();
+
+		// main method.
+		MethodVisitor methodVisitorMain = classWriter.visitMethod(ACC_PUBLIC | ACC_STATIC, "main",
+				"([Ljava/lang/String;)V",
 				null, null);
+		methodVisitorMain.visitCode();
+		Label labelMain0 = new Label();
+		methodVisitorMain.visitLabel(labelMain0);
+		// create a new instance of this class and call it's run method
+		methodVisitorMain.visitTypeInsn(NEW, this.fullyQualifiedClassName);
+		methodVisitorMain.visitInsn(DUP);
+		methodVisitorMain.visitMethodInsn(INVOKEVIRTUAL, this.fullyQualifiedClassName, "run", "()V", false);
+		methodVisitorMain.visitInsn(RETURN);
+		Label labelMain1 = new Label();
+		methodVisitorMain.visitLabel(labelMain1);
+		methodVisitorMain.visitLocalVariable("args", "[Ljava/lang/String;", null, labelMain0, labelMain1, 0);
+		methodVisitorMain.visitMaxs(2, 1);
+
+		methodVisitorMain.visitEnd();
+
+		// run method
+		MethodVisitor methodVisitorRun = classWriter.visitMethod(ACC_PUBLIC, "run", "()V", null, null);
+		methodVisitorRun.visitCode();
+		Label labelRun0 = new Label();
+		methodVisitorRun.visitLabel(labelRun0);
+
 		// visit the block, passing it the methodVisitor
-		program.block.visit(this, methodVisitor);
-		// finish up the class
-		classWriter.visitEnd();
+		program.block.visit(this, methodVisitorRun);
+
+		methodVisitorRun.visitInsn(RETURN);
+		Label labelRun1 = new Label();
+		methodVisitorRun.visitLabel(labelRun1);
+		methodVisitorRun.visitLocalVariable("this", this.classDesc, null, labelRun0, labelRun1, 0);
+
 		// return the bytes making up the classfile
 		List<GenClass> genClasses = new ArrayList<>();
 		genClasses.add(new GenClass(CodeGenUtils.toJMVClassName(this.packageName + '/' + this.className),
