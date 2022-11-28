@@ -76,6 +76,10 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitProgram(Program program, Object arg) throws PLPException {
+		// call the JVMNameVisitor to annotate the JVM nams for all the procedures
+		JVMNameVisitor jvmNameVisitor = new JVMNameVisitor(this.fullyQualifiedClassName);
+		program.visit(jvmNameVisitor, null);
+
 		// create a classWriter and visit it
 		classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 		// Hint: if you get failures in the visitMaxs, try creating a ClassWriter with 0
@@ -404,7 +408,9 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitConstDec(ConstDec constDec, Object arg) throws PLPException {
-		throw new UnsupportedOperationException();
+		// nothing to do at constant declarations, values will be passed when ever the
+		// const variable is used.
+		return null;
 	}
 
 	@Override
@@ -414,6 +420,9 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitIdent(Ident ident, Object arg) throws PLPException {
+		// assume a value is on the top of the stack, now store the value to the
+		// variabled indicated by the ident
+		// use the nesting level to go up chain of this$n vars for non-local variable.
 		throw new UnsupportedOperationException();
 	}
 
