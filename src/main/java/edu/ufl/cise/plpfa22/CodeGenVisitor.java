@@ -116,6 +116,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		// create a new instance of this class and call it's run method
 		methodVisitorMain.visitTypeInsn(NEW, this.fullyQualifiedClassName);
 		methodVisitorMain.visitInsn(DUP);
+		methodVisitorMain.visitMethodInsn(INVOKESPECIAL, this.fullyQualifiedClassName, "<init>", "()V", false);
 		methodVisitorMain.visitMethodInsn(INVOKEVIRTUAL, this.fullyQualifiedClassName, "run", "()V", false);
 		methodVisitorMain.visitInsn(RETURN);
 		Label labelMain1 = new Label();
