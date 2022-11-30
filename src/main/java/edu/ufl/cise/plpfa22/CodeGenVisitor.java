@@ -456,7 +456,14 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitExpressionIdent(ExpressionIdent expressionIdent, Object arg) throws PLPException {
-		throw new UnsupportedOperationException();
+		MethodVisitor mv = (MethodVisitor) arg;
+		if (expressionIdent.getDec() instanceof ConstDec) {
+			// simply push the constant's value on the stack
+			ConstDec constDec = (ConstDec) expressionIdent.getDec();
+			mv.visitLdcInsn(constDec.val);
+		}
+		// TODO: var variables
+		return null;
 	}
 
 	@Override
