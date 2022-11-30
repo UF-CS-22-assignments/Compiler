@@ -300,7 +300,7 @@ public class ASTTypeVisitor implements ASTVisitor {
                             throw new TypeCheckException("wrong type for expressionBinary",
                                     expressionBinary.getFirstToken().getSourceLocation());
                         }
-                        expressionBinary.setType(expression0.getType());
+                        this.setExprType(expressionBinary, expression0.getType());
                         untyped = this.visitSetUntyped(expression0, null, untyped);
                         untyped = this.visitSetUntyped(expression1, expression0.getType(), untyped);
                     } else {
