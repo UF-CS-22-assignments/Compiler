@@ -237,33 +237,8 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 		// find the enclosing reference
 		String enclosingClassDesc = this.getEnclosingClassDesc(procDec.JVMProcName);
-		if (procDec.getNest() == this.currentNestLevel) {
-			// use this reference of the current class
-			mv.visitVarInsn(ALOAD, 0);
 
-		} else {
-			// follow the this$n chain until find the correct one
-			// the first this$n should be the enclosing class of the current class, thus it
-			// has this.currentNestLevel - 1
-			int nest = this.currentNestLevel - 1;
-			String nestClassName = this.currentJVMName;
-
-			// stack: ... this
-			mv.visitVarInsn(ALOAD, 0);
-
-			for (; nest >= procDec.getNest(); nest--) {
-
-				// stack: ... this.this$nest
-				mv.visitFieldInsn(GETFIELD, nestClassName,
-						"this$" + nest, this.getEnclosingClassDesc(nestClassName));
-
-				nestClassName = this.getEnclosingClassName(nestClassName);
-
-			}
-
-			// stack: ... this.$this$nest.this$nest-1 .....
-
-		}
+		this.loadEnclosingClass2Stack(mv, procDec.getNest());
 
 		// invoke run()
 		mv.visitMethodInsn(INVOKESPECIAL,
@@ -693,23 +668,38 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		return null;
 	}
 
+	/**
+	 * load the enclosing class of the ident and return the class name
+	 */
 	@Override
 	public Object visitIdent(Ident ident, Object arg) throws PLPException {
 		// push the reference of the class that contains this ident on the stack
 		MethodVisitor mv = (MethodVisitor) arg;
 
+		return this.loadEnclosingClass2Stack(mv, ident.getDec().getNest());
+	}
+
+	/**
+	 * load the enclosing class of a certain nest level to the stack and return the
+	 * JVM name of it.
+	 * 
+	 * @param mv              current method visitor
+	 * @param targetNestLevel
+	 * @return
+	 */
+	private String loadEnclosingClass2Stack(MethodVisitor mv, int targetNestLevel) {
 		// stack: ...this
 		mv.visitVarInsn(ALOAD, 0);
 
 		// find the correct nest level
-		if (ident.getDec().getNest() == this.currentNestLevel) {
+		if (targetNestLevel == this.currentNestLevel) {
 			return this.currentJVMName;
 		} else {
 			// TODO: var
 			int nest = this.currentNestLevel - 1;
 			String nestClassName = this.currentJVMName;
 
-			for (; nest >= ident.getDec().getNest(); nest--) {
+			for (; nest >= targetNestLevel; nest--) {
 
 				// stack: ... this.this$nest
 				mv.visitFieldInsn(GETFIELD, nestClassName,
@@ -718,9 +708,9 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 				nestClassName = this.getEnclosingClassName(nestClassName);
 
 			}
+			return nestClassName;
 		}
 
-		return null;
 	}
 
 }
