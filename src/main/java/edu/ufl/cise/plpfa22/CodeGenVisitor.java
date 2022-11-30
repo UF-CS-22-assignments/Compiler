@@ -184,7 +184,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		this.currentJVMName = this.fullyQualifiedClassName;
 
 		// return the bytes making up the classfile
-		// TODO: add all the procedures' bytecode.
+		// add all the procedures' bytecode.
 		List<GenClass> genClasses = new ArrayList<>();
 		genClasses.add(new GenClass(CodeGenUtils.toJMVClassName(this.packageName + '/' + this.className),
 				classWriter.toByteArray()));
@@ -213,6 +213,10 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	@Override
 	public Object visitVarDec(VarDec varDec, Object arg) throws PLPException {
 		ClassWriter cw = (ClassWriter) arg;
+		if (varDec.getType() == null) {
+			// the variable is not used, hence ignore the declaration.
+			return null;
+		}
 		FieldVisitor fv = cw.visitField(0, new String(varDec.ident.getText()), varDec.getType().getDataJVMType(), null,
 				null);
 		fv.visitEnd();
@@ -292,7 +296,16 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitStatementWhile(StatementWhile statementWhile, Object arg) throws PLPException {
-		throw new UnsupportedOperationException();
+		MethodVisitor mv = (MethodVisitor) arg;
+		Label bodyLabel = new Label();
+		Label guardLabel = new Label();
+		mv.visitJumpInsn(GOTO, guardLabel);
+		mv.visitLabel(bodyLabel);
+		statementWhile.statement.visit(this, arg);
+		mv.visitLabel(guardLabel);
+		statementWhile.expression.visit(this, arg);
+		mv.visitJumpInsn(IFNE, bodyLabel);
+		return null;
 	}
 
 	@Override
@@ -510,8 +523,14 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 			// simply push the constant's value on the stack
 			ConstDec constDec = (ConstDec) expressionIdent.getDec();
 			mv.visitLdcInsn(constDec.val);
+		} else {
+			// load the ident's enclosing class's reference then get the value
+			String enclosingClassName = this.loadEnclosingClass2Stack(mv, expressionIdent.getDec().getNest());
+
+			mv.visitFieldInsn(GETFIELD, enclosingClassName,
+					new String(expressionIdent.getFirstToken().getText()),
+					expressionIdent.getDec().getType().getDataJVMType());
 		}
-		// TODO: var variables
 		return null;
 	}
 
