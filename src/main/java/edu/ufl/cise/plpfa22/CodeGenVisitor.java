@@ -533,8 +533,21 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 			mvInit.visitEnd();
 		}
 
-		// TODO: just for testing
-		procDec.block.visit(this, classWriterProc.visitMethod(ACC_PUBLIC, "run", "()V", null, null));
+		// add run method
+		{
+			MethodVisitor mvRun = classWriterProc.visitMethod(ACC_PUBLIC, "run", "()V", null, null);
+			mvRun.visitCode();
+			Label label0 = new Label();
+			mvRun.visitLabel(label0);
+			procDec.block.visit(this, mvRun);
+			mvRun.visitInsn(RETURN);
+			Label label1 = new Label();
+			mvRun.visitLabel(label1);
+			mvRun.visitLocalVariable("this",
+					"Ledu/ufl/cise/plpfa22/codeGenSamples/Var2$p;", null, label0, label1, 0);
+			mvRun.visitMaxs(2, 1); // TODO: what should this be?
+			mvRun.visitEnd();
+		}
 
 		// add a GenClass type
 		this.innerGenClasses.add(new GenClass(procDec.JVMProcName, classWriterProc.toByteArray()));
