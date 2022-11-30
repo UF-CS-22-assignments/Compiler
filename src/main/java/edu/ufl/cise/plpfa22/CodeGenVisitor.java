@@ -43,6 +43,8 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	ClassWriter classWriter;
 
+	ArrayList<GenClass> innerGenClasses = new ArrayList<>();
+
 	public CodeGenVisitor(String className, String packageName, String sourceFileName) {
 		super();
 		this.packageName = packageName;
@@ -74,17 +76,18 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	@Override
 	public Object visitProgram(Program program, Object arg) throws PLPException {
 		// call the JVMNameVisitor to annotate the JVM nams for all the procedures
-		JVMNameVisitor jvmNameVisitor = new JVMNameVisitor(this.fullyQualifiedClassName);
+		// need to get a list of those names for seting the nest member attribute.
+		ArrayList<String> procNames = new ArrayList<>();
+		JVMNameVisitor jvmNameVisitor = new JVMNameVisitor(this.fullyQualifiedClassName, procNames);
 		program.visit(jvmNameVisitor, null);
 
 		// create a classWriter and visit it
+		// TODO: the argument for this
 		classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 		// Hint: if you get failures in the visitMaxs, try creating a ClassWriter with 0
 		// instead of ClassWriter.COMPUTE_FRAMES. The result will not be a valid
-		// classfile,
-		// but you will be able to print it so you can see the instructions. After
-		// fixing,
-		// restore ClassWriter.COMPUTE_FRAMES
+		// classfile, but you will be able to print it so you can see the instructions.
+		// After fixing, restore ClassWriter.COMPUTE_FRAMES
 		classWriter.visit(V18, ACC_PUBLIC | ACC_SUPER, fullyQualifiedClassName, null, "java/lang/Object",
 				new String[] { "java/lang/Runnable" });
 
@@ -140,9 +143,13 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		methodVisitorRun.visitEnd();
 
 		// return the bytes making up the classfile
+		// TODO: add all the procedures' bytecode.
 		List<GenClass> genClasses = new ArrayList<>();
 		genClasses.add(new GenClass(CodeGenUtils.toJMVClassName(this.packageName + '/' + this.className),
 				classWriter.toByteArray()));
+		for (GenClass gc : this.innerGenClasses) {
+			genClasses.add(gc);
+		}
 
 		return genClasses;
 	}
@@ -445,7 +452,15 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitProcedure(ProcDec procDec, Object arg) throws PLPException {
-		throw new UnsupportedOperationException();
+		// add a GenClass type instance to this.innerGenClasses.
+		ClassWriter classWriterProc = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+		classWriterProc.visit(V18, ACC_SUPER, procDec.JVMProcName, null, "java/lang/Object",
+				new String[] { "java/lang/Runnable" });
+		classWriterProc.visitSource(this.sourceFileName, null);
+
+		classWriterProc.visitNestHost(this.fullyQualifiedClassName); // the nest host will always be the out-most class.
+
+		return null;
 	}
 
 	@Override

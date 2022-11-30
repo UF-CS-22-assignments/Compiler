@@ -1,5 +1,7 @@
 package edu.ufl.cise.plpfa22;
 
+import java.util.List;
+
 import edu.ufl.cise.plpfa22.ast.ASTVisitor;
 import edu.ufl.cise.plpfa22.ast.Block;
 import edu.ufl.cise.plpfa22.ast.ConstDec;
@@ -23,10 +25,12 @@ import edu.ufl.cise.plpfa22.ast.VarDec;
 
 public class JVMNameVisitor implements ASTVisitor {
     final String fullyQualifiedClassName;
+    List<String> procNames;
 
-    public JVMNameVisitor(String fullyQualifiedClassName) {
+    public JVMNameVisitor(String fullyQualifiedClassName, List<String> procNames) {
         super();
         this.fullyQualifiedClassName = fullyQualifiedClassName;
+        this.procNames = procNames;
     }
 
     @Override
@@ -127,6 +131,7 @@ public class JVMNameVisitor implements ASTVisitor {
         String curName = (String) arg;
         curName += "$" + new String(procDec.ident.getText());
         procDec.JVMProcName = curName;
+        this.procNames.add(curName);
         procDec.block.visit(this, curName);
         return null;
     }
