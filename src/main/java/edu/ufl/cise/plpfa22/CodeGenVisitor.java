@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -497,12 +498,35 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		// set inner classes
 		this.setProcInnerClass(procDec, classWriterProc);
 
+		// set this$n field, where n is the nest level
+		FieldVisitor fv = classWriterProc.visitField(ACC_FINAL | ACC_SYNTHETIC,
+				"this$" + String.valueOf(procDec.getNest()),
+				this.getEnclosingClassDesc(procDec.JVMProcName), null, null);
+		fv.visitEnd();
+
 		// TODO: just for testing
 		procDec.block.visit(this, classWriterProc.visitMethod(ACC_PUBLIC, "run", "()V", null, null));
 
 		// add a GenClass type
 		this.innerGenClasses.add(new GenClass(procDec.JVMProcName, classWriterProc.toByteArray()));
 
+		return null;
+	}
+
+	/**
+	 * get the enclosing class descriptor
+	 * haha/cnm/prog$p$q -> Lhaha/cnm/prog$p;
+	 * 
+	 * @param name
+	 * @return
+	 */
+	private String getEnclosingClassDesc(String name) {
+		for (int i = name.length() - 1; i >= 0; i--) {
+			if (name.charAt(i) == '$') {
+				return "L" + name.substring(0, i) + ";";
+			}
+		}
+		assert false;
 		return null;
 	}
 
