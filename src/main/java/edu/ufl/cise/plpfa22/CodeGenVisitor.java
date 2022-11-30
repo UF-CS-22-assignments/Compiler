@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -43,6 +44,8 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	ClassWriter classWriter;
 
+	ArrayList<GenClass> innerGenClasses = new ArrayList<>();
+
 	public CodeGenVisitor(String className, String packageName, String sourceFileName) {
 		super();
 		this.packageName = packageName;
@@ -71,22 +74,54 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	}
 
+	/**
+	 * visit inner class. Use the className to find the enclosing class name and the
+	 * simple class name.
+	 * e.g., haha/cnm/prog$q$p's enclosing class name is haha/cnm/prog$q, the simple
+	 * class name is p
+	 * the name must contain a $, otherwise, it's not an inner class.
+	 * 
+	 * @param cw
+	 * @param className
+	 */
+	private void setInnerClass(ClassWriter cw, String className) {
+		for (int i = className.length() - 1; i >= 0; i--) {
+			if (className.charAt(i) == '$') {
+				cw.visitInnerClass(className, className.substring(0, i), className.substring(i + 1), 0);
+				break;
+			}
+		}
+	}
+
 	@Override
 	public Object visitProgram(Program program, Object arg) throws PLPException {
 		// call the JVMNameVisitor to annotate the JVM nams for all the procedures
-		JVMNameVisitor jvmNameVisitor = new JVMNameVisitor(this.fullyQualifiedClassName);
+		// need to get a list of those names for seting the nest member attribute.
+		ArrayList<String> procNames = new ArrayList<>();
+		JVMNameVisitor jvmNameVisitor = new JVMNameVisitor(this.fullyQualifiedClassName, procNames);
 		program.visit(jvmNameVisitor, null);
 
 		// create a classWriter and visit it
+		// TODO: the argument for this
 		classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 		// Hint: if you get failures in the visitMaxs, try creating a ClassWriter with 0
 		// instead of ClassWriter.COMPUTE_FRAMES. The result will not be a valid
-		// classfile,
-		// but you will be able to print it so you can see the instructions. After
-		// fixing,
-		// restore ClassWriter.COMPUTE_FRAMES
+		// classfile, but you will be able to print it so you can see the instructions.
+		// After fixing, restore ClassWriter.COMPUTE_FRAMES
 		classWriter.visit(V18, ACC_PUBLIC | ACC_SUPER, fullyQualifiedClassName, null, "java/lang/Object",
 				new String[] { "java/lang/Runnable" });
+
+		classWriter.visitSource(sourceFileName, null);
+
+		// set nest memeber, should be all the nested class(procedure) in the program
+		for (String procName : procNames) {
+			classWriter.visitNestMember(procName);
+		}
+
+		// for program, add all the direct nest procedure to inner class
+		for (ProcDec procDec : program.block.procedureDecs) {
+			this.setInnerClass(classWriter, procDec.JVMProcName);
+		}
 
 		// init method
 		MethodVisitor methodVisitorInit = classWriter.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
@@ -140,9 +175,13 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		methodVisitorRun.visitEnd();
 
 		// return the bytes making up the classfile
+		// TODO: add all the procedures' bytecode.
 		List<GenClass> genClasses = new ArrayList<>();
 		genClasses.add(new GenClass(CodeGenUtils.toJMVClassName(this.packageName + '/' + this.className),
 				classWriter.toByteArray()));
+		for (GenClass gc : this.innerGenClasses) {
+			genClasses.add(gc);
+		}
 
 		return genClasses;
 	}
@@ -417,7 +456,14 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitExpressionIdent(ExpressionIdent expressionIdent, Object arg) throws PLPException {
-		throw new UnsupportedOperationException();
+		MethodVisitor mv = (MethodVisitor) arg;
+		if (expressionIdent.getDec() instanceof ConstDec) {
+			// simply push the constant's value on the stack
+			ConstDec constDec = (ConstDec) expressionIdent.getDec();
+			mv.visitLdcInsn(constDec.val);
+		}
+		// TODO: var variables
+		return null;
 	}
 
 	@Override
@@ -445,7 +491,115 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitProcedure(ProcDec procDec, Object arg) throws PLPException {
-		throw new UnsupportedOperationException();
+		// add a GenClass type instance to this.innerGenClasses.
+
+		String enclosingtClassDesc = this.getEnclosingClassDesc(procDec.JVMProcName);
+		String thisN = "this$" + String.valueOf(procDec.getNest());
+
+		ClassWriter classWriterProc = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+		classWriterProc.visit(V18, ACC_SUPER, procDec.JVMProcName, null, "java/lang/Object",
+				new String[] { "java/lang/Runnable" });
+		classWriterProc.visitSource(this.sourceFileName, null);
+
+		// the nest host will always be the out-most class, which is program's class
+		// name
+		classWriterProc.visitNestHost(this.fullyQualifiedClassName);
+
+		// set inner classes
+		this.setProcInnerClass(procDec, classWriterProc);
+
+		// set this$n field, where n is the nest level
+		{
+			FieldVisitor fv = classWriterProc.visitField(ACC_FINAL | ACC_SYNTHETIC,
+					thisN,
+					enclosingtClassDesc, null, null);
+			fv.visitEnd();
+		}
+
+		// add init method
+		{
+			MethodVisitor mvInit = classWriterProc.visitMethod(0, "<init>",
+					"(" + enclosingtClassDesc + ")V", null, null);
+			mvInit.visitCode();
+			Label label0 = new Label();
+			mvInit.visitLabel(label0);
+
+			// innerClass.this$n = outerClass
+			mvInit.visitVarInsn(ALOAD, 0);
+			mvInit.visitVarInsn(ALOAD, 1);
+			mvInit.visitFieldInsn(PUTFIELD, procDec.JVMProcName, thisN, enclosingtClassDesc);
+			mvInit.visitVarInsn(ALOAD, 0);
+			mvInit.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V",
+					false);
+			mvInit.visitInsn(RETURN);
+			Label label1 = new Label();
+			mvInit.visitLabel(label1);
+			mvInit.visitLocalVariable("this",
+					"L" + procDec.JVMProcName + ";", null, label0, label1, 0);
+			mvInit.visitMaxs(2, 2);
+			mvInit.visitEnd();
+		}
+
+		// add run method
+		{
+			MethodVisitor mvRun = classWriterProc.visitMethod(ACC_PUBLIC, "run", "()V", null, null);
+			mvRun.visitCode();
+			Label label0 = new Label();
+			mvRun.visitLabel(label0);
+			procDec.block.visit(this, mvRun);
+			mvRun.visitInsn(RETURN);
+			Label label1 = new Label();
+			mvRun.visitLabel(label1);
+			mvRun.visitLocalVariable("this",
+					"Ledu/ufl/cise/plpfa22/codeGenSamples/Var2$p;", null, label0, label1, 0);
+			mvRun.visitMaxs(2, 1); // TODO: what should this be?
+			mvRun.visitEnd();
+		}
+
+		// add a GenClass type
+		this.innerGenClasses.add(new GenClass(procDec.JVMProcName, classWriterProc.toByteArray()));
+
+		return null;
+	}
+
+	/**
+	 * get the enclosing class descriptor
+	 * haha/cnm/prog$p$q -> Lhaha/cnm/prog$p;
+	 * 
+	 * @param name
+	 * @return
+	 */
+	private String getEnclosingClassDesc(String name) {
+		for (int i = name.length() - 1; i >= 0; i--) {
+			if (name.charAt(i) == '$') {
+				return "L" + name.substring(0, i) + ";";
+			}
+		}
+		assert false;
+		return null;
+	}
+
+	/**
+	 * set the inner class for procedure.
+	 * 1. all of the enclosing class
+	 * 2. direct nested class
+	 * 
+	 * @param procDec
+	 * @param classWriterProc
+	 */
+	private void setProcInnerClass(ProcDec procDec, ClassWriter classWriterProc) {
+		// 1. all of the enclosing class, including itself
+		String[] classNames = procDec.JVMProcName.split("\\$");
+		String cur = classNames[0];
+		for (int i = 1; i < classNames.length; i++) {
+			cur = cur + "$" + classNames[i];
+			this.setInnerClass(classWriterProc, cur);
+		}
+
+		// 2. direct nested class
+		for (ProcDec nestedProcDec : procDec.block.procedureDecs) {
+			this.setInnerClass(classWriterProc, nestedProcDec.JVMProcName);
+		}
 	}
 
 	@Override

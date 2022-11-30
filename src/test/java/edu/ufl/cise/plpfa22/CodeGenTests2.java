@@ -403,6 +403,28 @@ public class CodeGenTests2 {
 		loadClassesAndRunMain(classes, className);
 	}
 
+	@DisplayName("procStructure")
+	@Test
+	public void procStructure(TestInfo testInfo) throws Exception {
+		String input = """
+				PROCEDURE p;
+					PROCEDURE r;
+						PROCEDURE t;;
+					;
+					PROCEDURE s;;
+				;
+				PROCEDURE q;;
+
+				.
+				""";
+		String shortClassName = "prog";
+		String JVMpackageName = "edu/ufl/cise/plpfa22";
+		List<GenClass> classes = compile(input, shortClassName, JVMpackageName);
+		Object[] args = new Object[1];
+		String className = "edu.ufl.cise.plpfa22.prog";
+		loadClassesAndRunMain(classes, className);
+	}
+
 	@DisplayName("proc1")
 	@Test
 	public void proc1(TestInfo testInfo) throws Exception {
