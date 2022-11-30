@@ -5,7 +5,25 @@
 package edu.ufl.cise.plpfa22.ast;
 
 public class Types {
-	
-	public static enum Type {NUMBER, BOOLEAN, STRING, PROCEDURE};
+
+	public static enum Type {
+		NUMBER, BOOLEAN, STRING, PROCEDURE;
+
+		public String getDataJVMType() {
+			switch (this) {
+				case BOOLEAN:
+					return "Z";
+				case NUMBER:
+					return "I";
+				case STRING:
+					return "Ljava/lang/String;";
+				default:
+					// the type of a procedure is depended on it's name, so we can't get it here.
+					assert false;
+					return "";
+
+			}
+		}
+	};
 
 }

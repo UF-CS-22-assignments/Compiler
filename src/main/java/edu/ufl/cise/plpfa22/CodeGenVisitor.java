@@ -202,7 +202,10 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitVarDec(VarDec varDec, Object arg) throws PLPException {
-		MethodVisitor mv = (MethodVisitor) arg;
+		ClassWriter cw = (ClassWriter) arg;
+		FieldVisitor fv = cw.visitField(0, new String(varDec.ident.getText()), varDec.getType().getDataJVMType(), null,
+				null);
+		fv.visitEnd();
 		return null;
 	}
 
