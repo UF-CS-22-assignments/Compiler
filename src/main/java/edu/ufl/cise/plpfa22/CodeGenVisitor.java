@@ -484,14 +484,49 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	@Override
 	public Object visitProcedure(ProcDec procDec, Object arg) throws PLPException {
 		// add a GenClass type instance to this.innerGenClasses.
+
 		ClassWriter classWriterProc = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 		classWriterProc.visit(V18, ACC_SUPER, procDec.JVMProcName, null, "java/lang/Object",
 				new String[] { "java/lang/Runnable" });
 		classWriterProc.visitSource(this.sourceFileName, null);
 
-		classWriterProc.visitNestHost(this.fullyQualifiedClassName); // the nest host will always be the out-most class.
+		// the nest host will always be the out-most class, which is program's class
+		// name
+		classWriterProc.visitNestHost(this.fullyQualifiedClassName);
+
+		// set inner classes
+		this.setProcInnerClass(procDec, classWriterProc);
+
+		// TODO: just for testing
+		procDec.block.visit(this, classWriterProc.visitMethod(ACC_PUBLIC, "run", "()V", null, null));
+
+		// add a GenClass type
+		this.innerGenClasses.add(new GenClass(procDec.JVMProcName, classWriterProc.toByteArray()));
 
 		return null;
+	}
+
+	/**
+	 * set the inner class for procedure.
+	 * 1. all of the enclosing class
+	 * 2. direct nested class
+	 * 
+	 * @param procDec
+	 * @param classWriterProc
+	 */
+	private void setProcInnerClass(ProcDec procDec, ClassWriter classWriterProc) {
+		// 1. all of the enclosing class, including itself
+		String[] classNames = procDec.JVMProcName.split("\\$");
+		String cur = classNames[0];
+		for (int i = 1; i < classNames.length; i++) {
+			cur = cur + "$" + classNames[i];
+			this.setInnerClass(classWriterProc, cur);
+		}
+
+		// 2. direct nested class
+		for (ProcDec nestedProcDec : procDec.block.procedureDecs) {
+			this.setInnerClass(classWriterProc, nestedProcDec.JVMProcName);
+		}
 	}
 
 	@Override
