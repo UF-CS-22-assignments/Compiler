@@ -486,6 +486,9 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	public Object visitProcedure(ProcDec procDec, Object arg) throws PLPException {
 		// add a GenClass type instance to this.innerGenClasses.
 
+		String enclosingtClassDesc = this.getEnclosingClassDesc(procDec.JVMProcName);
+		String thisN = "this$" + String.valueOf(procDec.getNest());
+
 		ClassWriter classWriterProc = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 		classWriterProc.visit(V18, ACC_SUPER, procDec.JVMProcName, null, "java/lang/Object",
 				new String[] { "java/lang/Runnable" });
@@ -499,10 +502,36 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		this.setProcInnerClass(procDec, classWriterProc);
 
 		// set this$n field, where n is the nest level
-		FieldVisitor fv = classWriterProc.visitField(ACC_FINAL | ACC_SYNTHETIC,
-				"this$" + String.valueOf(procDec.getNest()),
-				this.getEnclosingClassDesc(procDec.JVMProcName), null, null);
-		fv.visitEnd();
+		{
+			FieldVisitor fv = classWriterProc.visitField(ACC_FINAL | ACC_SYNTHETIC,
+					thisN,
+					enclosingtClassDesc, null, null);
+			fv.visitEnd();
+		}
+
+		// add init method
+		{
+			MethodVisitor mvInit = classWriterProc.visitMethod(0, "<init>",
+					"(" + enclosingtClassDesc + ")V", null, null);
+			mvInit.visitCode();
+			Label label0 = new Label();
+			mvInit.visitLabel(label0);
+
+			// innerClass.this$n = outerClass
+			mvInit.visitVarInsn(ALOAD, 0);
+			mvInit.visitVarInsn(ALOAD, 1);
+			mvInit.visitFieldInsn(PUTFIELD, procDec.JVMProcName, thisN, enclosingtClassDesc);
+			mvInit.visitVarInsn(ALOAD, 0);
+			mvInit.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V",
+					false);
+			mvInit.visitInsn(RETURN);
+			Label label1 = new Label();
+			mvInit.visitLabel(label1);
+			mvInit.visitLocalVariable("this",
+					"L" + procDec.JVMProcName + ";", null, label0, label1, 0);
+			mvInit.visitMaxs(2, 2);
+			mvInit.visitEnd();
+		}
 
 		// TODO: just for testing
 		procDec.block.visit(this, classWriterProc.visitMethod(ACC_PUBLIC, "run", "()V", null, null));
