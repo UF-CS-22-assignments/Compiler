@@ -179,9 +179,9 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		methodVisitorMain.visitEnd();
 
 		// visit the block, pass it the ClassVisitor
-		this.currentJVMName = this.className;
+		this.currentJVMName = this.fullyQualifiedClassName;
 		program.block.visit(this, classWriter);
-		this.currentJVMName = this.className;
+		this.currentJVMName = this.fullyQualifiedClassName;
 
 		// return the bytes making up the classfile
 		// TODO: add all the procedures' bytecode.
@@ -197,7 +197,17 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitStatementAssign(StatementAssign statementAssign, Object arg) throws PLPException {
-		throw new UnsupportedOperationException();
+		MethodVisitor mv = (MethodVisitor) arg;
+		statementAssign.expression.visit(this, arg);
+
+		// the JVM name of class where the ident is at
+		String identClassJVMName = (String) statementAssign.ident.visit(this, arg);
+		mv.visitInsn(SWAP);
+		mv.visitFieldInsn(PUTFIELD, identClassJVMName,
+				new String(statementAssign.ident.getFirstToken().getText()),
+				statementAssign.ident.getDec().getType().getDataJVMType());
+
+		return null;
 	}
 
 	@Override
@@ -685,10 +695,32 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitIdent(Ident ident, Object arg) throws PLPException {
-		// assume a value is on the top of the stack, now store the value to the
-		// variabled indicated by the ident
-		// use the nesting level to go up chain of this$n vars for non-local variable.
-		throw new UnsupportedOperationException();
+		// push the reference of the class that contains this ident on the stack
+		MethodVisitor mv = (MethodVisitor) arg;
+
+		// stack: ...this
+		mv.visitVarInsn(ALOAD, 0);
+
+		// find the correct nest level
+		if (ident.getDec().getNest() == this.currentNestLevel) {
+			return this.currentJVMName;
+		} else {
+			// TODO: var
+			int nest = this.currentNestLevel - 1;
+			String nestClassName = this.currentJVMName;
+
+			for (; nest >= ident.getDec().getNest(); nest--) {
+
+				// stack: ... this.this$nest
+				mv.visitFieldInsn(GETFIELD, nestClassName,
+						"this$" + nest, this.getEnclosingClassDesc(nestClassName));
+
+				nestClassName = this.getEnclosingClassName(nestClassName);
+
+			}
+		}
+
+		return null;
 	}
 
 }
