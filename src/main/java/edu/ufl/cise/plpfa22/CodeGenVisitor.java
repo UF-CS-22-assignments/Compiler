@@ -1,6 +1,5 @@
 package edu.ufl.cise.plpfa22;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -67,7 +66,10 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitBlock(Block block, Object arg) throws PLPException {
-		MethodVisitor methodVisitor = (MethodVisitor) arg;
+		ClassWriter cw = (ClassWriter) arg;
+
+		MethodVisitor methodVisitorRun = cw.visitMethod(ACC_PUBLIC, "run", "()V", null, null);
+		methodVisitorRun.visitCode();
 
 		this.currentNestLevel += 1;
 
@@ -75,15 +77,19 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 			constDec.visit(this, null);
 		}
 		for (VarDec varDec : block.varDecs) {
-			varDec.visit(this, methodVisitor);
+			varDec.visit(this, cw);
 		}
 		for (ProcDec procDec : block.procedureDecs) {
 			procDec.visit(this, null);
 		}
 		// add instructions from statement to method
-		block.statement.visit(this, arg);
+		block.statement.visit(this, methodVisitorRun);
 
 		this.currentNestLevel -= 1;
+
+		methodVisitorRun.visitInsn(RETURN);
+		methodVisitorRun.visitEnd();
+		methodVisitorRun.visitMaxs(2, 1);
 		return null;
 
 	}
@@ -172,23 +178,10 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 		methodVisitorMain.visitEnd();
 
-		// run method
-		MethodVisitor methodVisitorRun = classWriter.visitMethod(ACC_PUBLIC, "run", "()V", null, null);
-		methodVisitorRun.visitCode();
-		Label labelRun0 = new Label();
-		methodVisitorRun.visitLabel(labelRun0);
-
-		// visit the block, passing it the methodVisitor
+		// visit the block, pass it the ClassVisitor
 		this.currentJVMName = this.className;
-		program.block.visit(this, methodVisitorRun);
+		program.block.visit(this, classWriter);
 		this.currentJVMName = this.className;
-
-		methodVisitorRun.visitInsn(RETURN);
-		Label labelRun1 = new Label();
-		methodVisitorRun.visitLabel(labelRun1);
-		methodVisitorRun.visitLocalVariable("this", this.classDesc, null, labelRun0, labelRun1, 0);
-		methodVisitorRun.visitMaxs(0, 0);
-		methodVisitorRun.visitEnd();
 
 		// return the bytes making up the classfile
 		// TODO: add all the procedures' bytecode.
@@ -209,7 +202,8 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitVarDec(VarDec varDec, Object arg) throws PLPException {
-		throw new UnsupportedOperationException();
+		MethodVisitor mv = (MethodVisitor) arg;
+		return null;
 	}
 
 	/**
@@ -609,24 +603,11 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 		// add run method
 		{
-			MethodVisitor mvRun = classWriterProc.visitMethod(ACC_PUBLIC, "run", "()V", null, null);
-			mvRun.visitCode();
-			Label label0 = new Label();
-			mvRun.visitLabel(label0);
-
-			// // set and restore this.currentJVMDesc
+			// set and restore this.currentJVMDesc
 			String enclosingJVMName = this.currentJVMName;
 			this.currentJVMName = procDec.JVMProcName;
-			procDec.block.visit(this, mvRun);
+			procDec.block.visit(this, classWriterProc);
 			this.currentJVMName = enclosingJVMName;
-
-			mvRun.visitInsn(RETURN);
-			Label label1 = new Label();
-			mvRun.visitLabel(label1);
-			mvRun.visitLocalVariable("this",
-					"L" + procDec.JVMProcName + ";", null, label0, label1, 0);
-			mvRun.visitMaxs(2, 1); // TODO: what should this be?
-			mvRun.visitEnd();
 		}
 
 		// add a GenClass type
