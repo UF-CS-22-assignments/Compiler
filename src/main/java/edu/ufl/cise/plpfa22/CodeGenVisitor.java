@@ -179,12 +179,12 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		methodVisitorMain.visitEnd();
 
 		// visit the block, pass it the ClassVisitor
-		this.currentJVMName = this.className;
+		this.currentJVMName = this.fullyQualifiedClassName;
 		program.block.visit(this, classWriter);
-		this.currentJVMName = this.className;
+		this.currentJVMName = this.fullyQualifiedClassName;
 
 		// return the bytes making up the classfile
-		// TODO: add all the procedures' bytecode.
+		// add all the procedures' bytecode.
 		List<GenClass> genClasses = new ArrayList<>();
 		genClasses.add(new GenClass(CodeGenUtils.toJMVClassName(this.packageName + '/' + this.className),
 				classWriter.toByteArray()));
@@ -197,12 +197,26 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitStatementAssign(StatementAssign statementAssign, Object arg) throws PLPException {
-		throw new UnsupportedOperationException();
+		MethodVisitor mv = (MethodVisitor) arg;
+		statementAssign.expression.visit(this, arg);
+
+		// the JVM name of class where the ident is at
+		String identClassJVMName = (String) statementAssign.ident.visit(this, arg);
+		mv.visitInsn(SWAP);
+		mv.visitFieldInsn(PUTFIELD, identClassJVMName,
+				new String(statementAssign.ident.getFirstToken().getText()),
+				statementAssign.ident.getDec().getType().getDataJVMType());
+
+		return null;
 	}
 
 	@Override
 	public Object visitVarDec(VarDec varDec, Object arg) throws PLPException {
 		ClassWriter cw = (ClassWriter) arg;
+		if (varDec.getType() == null) {
+			// the variable is not used, hence ignore the declaration.
+			return null;
+		}
 		FieldVisitor fv = cw.visitField(0, new String(varDec.ident.getText()), varDec.getType().getDataJVMType(), null,
 				null);
 		fv.visitEnd();
@@ -227,33 +241,8 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 		// find the enclosing reference
 		String enclosingClassDesc = this.getEnclosingClassDesc(procDec.JVMProcName);
-		if (procDec.getNest() == this.currentNestLevel) {
-			// use this reference of the current class
-			mv.visitVarInsn(ALOAD, 0);
 
-		} else {
-			// follow the this$n chain until find the correct one
-			// the first this$n should be the enclosing class of the current class, thus it
-			// has this.currentNestLevel - 1
-			int nest = this.currentNestLevel - 1;
-			String nestClassName = this.currentJVMName;
-
-			// stack: ... this
-			mv.visitVarInsn(ALOAD, 0);
-
-			for (; nest >= procDec.getNest(); nest--) {
-
-				// stack: ... this.this$nest
-				mv.visitFieldInsn(GETFIELD, nestClassName,
-						"this$" + nest, this.getEnclosingClassDesc(nestClassName));
-
-				nestClassName = this.getEnclosingClassName(nestClassName);
-
-			}
-
-			// stack: ... this.$this$nest.this$nest-1 .....
-
-		}
+		this.loadEnclosingClass2Stack(mv, procDec.getNest());
 
 		// invoke run()
 		mv.visitMethodInsn(INVOKESPECIAL,
@@ -307,7 +296,16 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitStatementWhile(StatementWhile statementWhile, Object arg) throws PLPException {
-		throw new UnsupportedOperationException();
+		MethodVisitor mv = (MethodVisitor) arg;
+		Label bodyLabel = new Label();
+		Label guardLabel = new Label();
+		mv.visitJumpInsn(GOTO, guardLabel);
+		mv.visitLabel(bodyLabel);
+		statementWhile.statement.visit(this, arg);
+		mv.visitLabel(guardLabel);
+		statementWhile.expression.visit(this, arg);
+		mv.visitJumpInsn(IFNE, bodyLabel);
+		return null;
 	}
 
 	@Override
@@ -525,8 +523,14 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 			// simply push the constant's value on the stack
 			ConstDec constDec = (ConstDec) expressionIdent.getDec();
 			mv.visitLdcInsn(constDec.val);
+		} else {
+			// load the ident's enclosing class's reference then get the value
+			String enclosingClassName = this.loadEnclosingClass2Stack(mv, expressionIdent.getDec().getNest());
+
+			mv.visitFieldInsn(GETFIELD, enclosingClassName,
+					new String(expressionIdent.getFirstToken().getText()),
+					expressionIdent.getDec().getType().getDataJVMType());
 		}
-		// TODO: var variables
 		return null;
 	}
 
@@ -683,12 +687,49 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		return null;
 	}
 
+	/**
+	 * load the enclosing class of the ident and return the class name
+	 */
 	@Override
 	public Object visitIdent(Ident ident, Object arg) throws PLPException {
-		// assume a value is on the top of the stack, now store the value to the
-		// variabled indicated by the ident
-		// use the nesting level to go up chain of this$n vars for non-local variable.
-		throw new UnsupportedOperationException();
+		// push the reference of the class that contains this ident on the stack
+		MethodVisitor mv = (MethodVisitor) arg;
+
+		return this.loadEnclosingClass2Stack(mv, ident.getDec().getNest());
+	}
+
+	/**
+	 * load the enclosing class of a certain nest level to the stack and return the
+	 * JVM name of it.
+	 * 
+	 * @param mv              current method visitor
+	 * @param targetNestLevel
+	 * @return
+	 */
+	private String loadEnclosingClass2Stack(MethodVisitor mv, int targetNestLevel) {
+		// stack: ...this
+		mv.visitVarInsn(ALOAD, 0);
+
+		// find the correct nest level
+		if (targetNestLevel == this.currentNestLevel) {
+			return this.currentJVMName;
+		} else {
+			// TODO: var
+			int nest = this.currentNestLevel - 1;
+			String nestClassName = this.currentJVMName;
+
+			for (; nest >= targetNestLevel; nest--) {
+
+				// stack: ... this.this$nest
+				mv.visitFieldInsn(GETFIELD, nestClassName,
+						"this$" + nest, this.getEnclosingClassDesc(nestClassName));
+
+				nestClassName = this.getEnclosingClassName(nestClassName);
+
+			}
+			return nestClassName;
+		}
+
 	}
 
 }
