@@ -73,6 +73,25 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	}
 
+	/**
+	 * visit inner class. Use the className to find the enclosing class name and the
+	 * simple class name.
+	 * e.g., haha/cnm/prog$q$p's enclosing class name is haha/cnm/prog$q, the simple
+	 * class name is p
+	 * the name must contain a $, otherwise, it's not an inner class.
+	 * 
+	 * @param cw
+	 * @param className
+	 */
+	private void setInnerClass(ClassWriter cw, String className) {
+		for (int i = className.length() - 1; i >= 0; i--) {
+			if (className.charAt(i) == '$') {
+				cw.visitInnerClass(className, className.substring(0, i), className.substring(i + 1), 0);
+				break;
+			}
+		}
+	}
+
 	@Override
 	public Object visitProgram(Program program, Object arg) throws PLPException {
 		// call the JVMNameVisitor to annotate the JVM nams for all the procedures
@@ -90,6 +109,18 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		// After fixing, restore ClassWriter.COMPUTE_FRAMES
 		classWriter.visit(V18, ACC_PUBLIC | ACC_SUPER, fullyQualifiedClassName, null, "java/lang/Object",
 				new String[] { "java/lang/Runnable" });
+
+		classWriter.visitSource(sourceFileName, null);
+
+		// set nest memeber, should be all the nested class(procedure) in the program
+		for (String procName : procNames) {
+			classWriter.visitNestMember(procName);
+		}
+
+		// for program, add all the direct nest procedure to inner class
+		for (ProcDec procDec : program.block.procedureDecs) {
+			this.setInnerClass(classWriter, procDec.JVMProcName);
+		}
 
 		// init method
 		MethodVisitor methodVisitorInit = classWriter.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
