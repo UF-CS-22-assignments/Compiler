@@ -1,5 +1,6 @@
 package edu.ufl.cise.plpfa22;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,6 +43,14 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	final String fullyQualifiedClassName;
 	final String classDesc;
 
+	// init as -1, because the first block's nest level is 0.
+	// add 1 when entering a block; minus 1 when leaving a block
+	int currentNestLevel;
+
+	// // the JVM descriptor for the current class
+	// // change before and after entering a block
+	String currentJVMName;
+
 	ClassWriter classWriter;
 
 	ArrayList<GenClass> innerGenClasses = new ArrayList<>();
@@ -53,11 +62,14 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		this.sourceFileName = sourceFileName;
 		this.fullyQualifiedClassName = packageName + "/" + className;
 		this.classDesc = "L" + this.fullyQualifiedClassName + ';';
+		this.currentNestLevel = -1;
 	}
 
 	@Override
 	public Object visitBlock(Block block, Object arg) throws PLPException {
 		MethodVisitor methodVisitor = (MethodVisitor) arg;
+
+		this.currentNestLevel += 1;
 
 		for (ConstDec constDec : block.constDecs) {
 			constDec.visit(this, null);
@@ -70,6 +82,8 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		}
 		// add instructions from statement to method
 		block.statement.visit(this, arg);
+
+		this.currentNestLevel -= 1;
 		return null;
 
 	}
@@ -165,7 +179,9 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		methodVisitorRun.visitLabel(labelRun0);
 
 		// visit the block, passing it the methodVisitor
+		this.currentJVMName = this.className;
 		program.block.visit(this, methodVisitorRun);
+		this.currentJVMName = this.className;
 
 		methodVisitorRun.visitInsn(RETURN);
 		Label labelRun1 = new Label();
@@ -196,9 +212,60 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 		throw new UnsupportedOperationException();
 	}
 
+	/**
+	 * 1. ceate an instance of the corresponding inner class
+	 * 2. set the enclosing class's reference to the init method, may need to go
+	 * through the this$n chain if the class is not the direct inner class of the
+	 * current class, in other words, the procedure is declared in the enclosing
+	 * procedure
+	 * 3. invoke the run method
+	 */
 	@Override
 	public Object visitStatementCall(StatementCall statementCall, Object arg) throws PLPException {
-		throw new UnsupportedOperationException();
+		// create an instance
+		MethodVisitor mv = (MethodVisitor) arg;
+		ProcDec procDec = (ProcDec) statementCall.ident.getDec();
+		mv.visitTypeInsn(NEW, procDec.JVMProcName);
+		mv.visitInsn(DUP);
+
+		// find the enclosing reference
+		String enclosingClassDesc = this.getEnclosingClassDesc(procDec.JVMProcName);
+		if (procDec.getNest() == this.currentNestLevel) {
+			// use this reference of the current class
+			mv.visitVarInsn(ALOAD, 0);
+
+		} else {
+			// follow the this$n chain until find the correct one
+			// the first this$n should be the enclosing class of the current class, thus it
+			// has this.currentNestLevel - 1
+			int nest = this.currentNestLevel - 1;
+			String nestClassName = this.currentJVMName;
+
+			// stack: ... this
+			mv.visitVarInsn(ALOAD, 0);
+
+			for (; nest >= procDec.getNest(); nest--) {
+
+				// stack: ... this.this$nest
+				mv.visitFieldInsn(GETFIELD, nestClassName,
+						"this$" + nest, this.getEnclosingClassDesc(nestClassName));
+
+				nestClassName = this.getEnclosingClassName(nestClassName);
+
+			}
+
+			// stack: ... this.$this$nest.this$nest-1 .....
+
+		}
+
+		// invoke run()
+		mv.visitMethodInsn(INVOKESPECIAL,
+				procDec.JVMProcName, "<init>",
+				"(" + enclosingClassDesc + ")V", false);
+		mv.visitMethodInsn(INVOKEVIRTUAL,
+				procDec.JVMProcName, "run", "()V", false);
+
+		return null;
 	}
 
 	@Override
@@ -546,12 +613,18 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 			mvRun.visitCode();
 			Label label0 = new Label();
 			mvRun.visitLabel(label0);
+
+			// // set and restore this.currentJVMDesc
+			String enclosingJVMName = this.currentJVMName;
+			this.currentJVMName = procDec.JVMProcName;
 			procDec.block.visit(this, mvRun);
+			this.currentJVMName = enclosingJVMName;
+
 			mvRun.visitInsn(RETURN);
 			Label label1 = new Label();
 			mvRun.visitLabel(label1);
 			mvRun.visitLocalVariable("this",
-					"Ledu/ufl/cise/plpfa22/codeGenSamples/Var2$p;", null, label0, label1, 0);
+					"L" + procDec.JVMProcName + ";", null, label0, label1, 0);
 			mvRun.visitMaxs(2, 1); // TODO: what should this be?
 			mvRun.visitEnd();
 		}
@@ -563,6 +636,24 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	}
 
 	/**
+	 * get the enclosing class name
+	 * haha/cnm/prog$p$q -> haha/cnm/prog$p
+	 * 
+	 * @param name
+	 * @return
+	 */
+	private String getEnclosingClassName(String name) {
+		for (int i = name.length() - 1; i >= 0; i--) {
+			if (name.charAt(i) == '$') {
+				return name.substring(0, i);
+			}
+		}
+		assert false;
+		return null;
+
+	}
+
+	/**
 	 * get the enclosing class descriptor
 	 * haha/cnm/prog$p$q -> Lhaha/cnm/prog$p;
 	 * 
@@ -570,13 +661,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 	 * @return
 	 */
 	private String getEnclosingClassDesc(String name) {
-		for (int i = name.length() - 1; i >= 0; i--) {
-			if (name.charAt(i) == '$') {
-				return "L" + name.substring(0, i) + ";";
-			}
-		}
-		assert false;
-		return null;
+		return "L" + this.getEnclosingClassName(name) + ";";
 	}
 
 	/**
